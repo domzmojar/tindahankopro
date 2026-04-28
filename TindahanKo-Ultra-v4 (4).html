@@ -1,0 +1,2635 @@
+<!DOCTYPE html>
+<html lang="fil">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Tindahan Ko Ultra</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/zxing-js/0.21.3/umd/index.min.js"></script>
+<style>
+  :root {
+    --bg:#060810; --surface:#0d1117; --card:#111827; --border:#1e2a3a;
+    --accent:#f5a623; --accent-dark:#d97706; --accent-text:#1a0f00;
+    --red:#ff4757; --green:#2ed573; --blue:#1e90ff; --purple:#a855f7;
+    --text:#f0f4ff; --text-mid:#8899aa; --text-dim:#445566;
+    --font:'Syne',sans-serif; --body:'DM Sans',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{width:100%;overflow-x:hidden;background:var(--bg);font-family:var(--body);color:var(--text)}
+  ::-webkit-scrollbar{width:0;height:0}
+  input,select,textarea{font-family:var(--body)}
+  input::placeholder{color:var(--text-dim)}
+  @keyframes ping{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.5)}}
+  @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes slideDown{from{transform:translateY(-40px);opacity:0}to{transform:translateY(0);opacity:1}}
+  @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+  @keyframes laser{0%,100%{top:8%}50%{top:88%}}
+
+  /* LAYOUT */
+  #app{max-width:430px;margin:0 auto;min-height:100vh;position:relative;overflow-x:hidden}
+  #header{background:rgba(13,17,23,.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:14px 18px 12px;position:sticky;top:0;z-index:100;width:100%}
+  #content{padding:16px 14px 100px;animation:fadeUp .3s ease;width:100%;overflow-x:hidden}
+  #bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:rgba(13,17,23,.97);backdrop-filter:blur(24px);border-top:1px solid var(--border);display:flex;padding:7px 2px 14px;z-index:100}
+  .nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;cursor:pointer;padding:5px 1px;position:relative;font-family:var(--body)}
+  .nav-icon{font-size:18px;transition:all .2s;filter:grayscale(.5) opacity(.5)}
+  .nav-label{font-size:8px;font-weight:500;color:var(--text-dim);transition:all .2s}
+  .nav-dot{width:14px;height:2px;border-radius:99px;background:var(--accent);display:none}
+  .nav-btn.active .nav-icon{font-size:19px;filter:none}
+  .nav-btn.active .nav-label{font-weight:800;color:var(--accent)}
+  .nav-btn.active .nav-dot{display:block}
+  .nav-badge{position:absolute;top:0;right:2px;background:var(--red);border-radius:50%;width:14px;height:14px;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;color:#fff}
+
+  /* CARDS */
+  .card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:18px}
+  .card-glow-green{border-color:rgba(46,213,115,.3);box-shadow:0 0 20px rgba(46,213,115,.08)}
+  .card-glow-red{border-color:rgba(255,71,87,.3);box-shadow:0 0 20px rgba(255,71,87,.08)}
+  .card-glow-gold{border-color:rgba(245,166,35,.3);box-shadow:0 0 20px rgba(245,166,35,.08)}
+  .card-glow-blue{border-color:rgba(30,144,255,.3);box-shadow:0 0 20px rgba(30,144,255,.08)}
+  .card-glow-purple{border-color:rgba(168,85,247,.3);box-shadow:0 0 20px rgba(168,85,247,.08)}
+
+  /* INPUTS */
+  .inp{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:11px 14px;color:var(--text);font-size:13px;outline:none;width:100%;transition:border .2s;font-family:var(--body)}
+  .inp:focus{border-color:var(--accent)}
+  .inp-sm{padding:8px 12px;font-size:12px;border-radius:8px}
+
+  /* BUTTONS */
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:none;border-radius:10px;padding:12px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--body);transition:all .2s;white-space:nowrap}
+  .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent-dark));color:var(--accent-text)}
+  .btn-ghost{background:var(--surface);color:var(--text-mid);border:1px solid var(--border)}
+  .btn-success{background:rgba(46,213,115,.15);color:var(--green);border:1px solid rgba(46,213,115,.3)}
+  .btn-danger{background:rgba(255,71,87,.15);color:var(--red);border:1px solid rgba(255,71,87,.3)}
+  .btn-blue{background:rgba(30,144,255,.15);color:var(--blue);border:1px solid rgba(30,144,255,.3)}
+  .btn-sm{padding:7px 12px;font-size:11px;border-radius:8px}
+  .btn-full{width:100%}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+
+  /* BADGES */
+  .badge{display:inline-flex;align-items:center;font-size:9px;font-weight:700;border-radius:6px;padding:3px 8px;letter-spacing:.5px}
+
+  /* PILLS */
+  .pill{background:var(--card);color:var(--text-mid);border:1px solid var(--border);border-radius:20px;padding:6px 14px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:var(--body);transition:all .2s;flex-shrink:0}
+  .pill.active{background:rgba(245,166,35,.15);color:var(--accent);border-color:rgba(245,166,35,.3)}
+
+  /* TOGGLE */
+  .toggle{width:44px;height:24px;border-radius:99px;cursor:pointer;position:relative;transition:background .3s;border:none;flex-shrink:0}
+  .toggle-thumb{position:absolute;top:2px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .3s}
+
+  /* STAT CARD */
+  .stat-card{background:var(--card);border-radius:16px;padding:16px 18px;position:relative;overflow:hidden}
+  .stat-card-bg{position:absolute;top:-24px;right:-24px;width:80px;height:80px;border-radius:50%;opacity:.07}
+  .stat-icon{font-size:22px;border-radius:12px;padding:8px 10px;position:relative}
+  .stat-label{font-size:10px;color:var(--text-mid);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:8px}
+  .stat-value{font-size:22px;font-weight:800;font-family:var(--font);line-height:1}
+  .stat-sub{font-size:10px;color:var(--text-dim);margin-top:6px}
+  .pulse-dot{position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;background:var(--red);animation:ping 1.5s infinite}
+
+  /* PILL SCROLL */
+  .pill-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;width:100%}
+  .pill-row::-webkit-scrollbar{height:0}
+
+  /* GRID */
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+
+  /* SECTION */
+  .section{display:flex;flex-direction:column;gap:14px;width:100%;overflow-x:hidden}
+
+  /* TABS */
+  .tab-content{display:none}
+  .tab-content.active{display:block}
+
+  /* TOAST */
+  #toast{position:fixed;top:18px;left:50%;transform:translateX(-50%);border-radius:14px;padding:12px 24px;font-size:12px;font-weight:700;z-index:999;animation:slideDown .3s ease;white-space:nowrap;display:none;max-width:88vw;text-align:center}
+
+  /* LOGIN */
+  #login-screen{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:500;padding:24px;overflow:hidden}
+  .login-circle{position:absolute;border-radius:50%;pointer-events:none}
+
+  /* CHAT */
+  #chat-messages{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding-right:2px;margin-bottom:10px;min-height:200px;max-height:calc(100vh - 340px)}
+  .msg-user{display:flex;justify-content:flex-end}
+  .msg-ai{display:flex;justify-content:flex-start;gap:8px;align-items:flex-start}
+  .msg-bubble-user{max-width:82%;background:linear-gradient(135deg,var(--accent),var(--accent-dark));color:var(--accent-text);border-radius:16px 16px 4px 16px;padding:10px 14px;font-size:12px;line-height:1.6;word-break:break-word;white-space:pre-wrap}
+  .msg-bubble-ai{max-width:82%;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:16px 16px 16px 4px;padding:10px 14px;font-size:12px;line-height:1.6;word-break:break-word;white-space:pre-wrap}
+
+  /* FORM ROW */
+  .form-row{padding:10px 0;border-bottom:1px solid var(--border)}
+  .form-label{font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px}
+  .settings-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border)}
+  .settings-row-label{font-size:12px;color:var(--text)}
+  .settings-row-sub{font-size:9px;color:var(--text-dim);margin-top:2px}
+
+  /* RECEIPT */
+  .receipt-line{display:flex;justify-content:space-between;font-size:12px;color:var(--text);padding:4px 0}
+
+  /* BAR CHART */
+  .bar-chart{display:flex;align-items:flex-end;gap:6px;height:90px;padding-top:8px;width:100%;overflow:hidden}
+  .bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}
+  .bar-wrap{width:100%;display:flex;flex-direction:column;justify-content:flex-end;height:72px;gap:1px}
+  .bar-profit{width:100%;border-radius:3px 3px 0 0;background:linear-gradient(180deg,var(--accent),var(--accent-dark));transition:height .6s ease}
+  .bar-sales{width:100%;background:rgba(30,144,255,.5);transition:height .6s ease}
+  .bar-label{font-size:8px;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-align:center}
+
+  /* PROGRESS BAR */
+  .prog-track{background:var(--border);border-radius:99px;overflow:hidden}
+  .prog-fill{border-radius:99px;transition:width .5s ease}
+
+  /* SPARKLINE */
+  .spark{display:block;width:100%;overflow:hidden}
+
+  /* SCROLLABLE SECTION */
+  .scroll-section{overflow-x:hidden;overflow-y:auto;width:100%}
+
+  /* Modal */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:flex;align-items:flex-end;justify-content:center}
+  .modal-sheet{background:var(--card);border-radius:20px 20px 0 0;padding:24px 20px 40px;width:100%;max-width:430px;max-height:80vh;overflow-y:auto}
+  .modal-handle{width:40px;height:4px;background:var(--border);border-radius:99px;margin:0 auto 20px}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen">
+  <div class="login-circle" style="width:300px;height:300px;top:-100px;right:-100px;background:var(--accent);opacity:.04"></div>
+  <div class="login-circle" style="width:200px;height:200px;bottom:-60px;left:-60px;background:var(--blue);opacity:.05"></div>
+
+  <div id="login-welcome" style="display:flex;flex-direction:column;align-items:center;width:100%;max-width:360px">
+    <div style="font-size:72px;animation:float 3s ease-in-out infinite;margin-bottom:20px">🏪</div>
+    <div style="font-size:34px;font-weight:800;font-family:var(--font);color:var(--accent);text-align:center">Tindahan Ko</div>
+    <div style="font-size:13px;color:var(--text-mid);margin-top:4px;margin-bottom:6px">Ultra Edition</div>
+    <div style="background:rgba(245,166,35,.15);border:1px solid rgba(245,166,35,.3);border-radius:8px;padding:4px 14px;font-size:10px;color:var(--accent);font-weight:700;margin-bottom:36px">v4.0 PRO</div>
+    <button class="btn btn-primary btn-full" style="font-size:15px;padding:16px;margin-bottom:16px" onclick="showLicenseForm()">🔑 I-activate ang License</button>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;width:100%;text-align:center">
+      <div style="font-size:11px;color:var(--text-mid);font-weight:600;margin-bottom:6px">🎁 Demo Key (para sa testing):</div>
+      <div style="font-family:monospace;font-size:14px;color:var(--accent);letter-spacing:2px;margin-bottom:4px">TINDAHAN-DEMO-2025</div>
+      <div style="font-size:10px;color:var(--text-dim)">7-day trial • I-copy at i-paste sa ibaba</div>
+    </div>
+    <div style="font-size:9px;color:var(--text-dim);margin-top:16px">Device: <span id="device-id-display" style="font-family:monospace"></span></div>
+  </div>
+
+  <div id="login-form" style="display:none;width:100%;max-width:380px">
+    <button onclick="showWelcome()" style="background:none;border:none;color:var(--text-mid);font-size:12px;cursor:pointer;margin-bottom:16px;font-family:var(--body)">← Bumalik</button>
+    <div class="card">
+      <div style="font-size:10px;color:var(--accent);font-weight:700;letter-spacing:2px;margin-bottom:6px">LICENSE ACTIVATION</div>
+      <div style="font-size:22px;font-weight:800;font-family:var(--font);color:var(--text);margin-bottom:4px">I-enter ang Key</div>
+      <div style="font-size:11px;color:var(--text-mid);margin-bottom:20px">Isa lang per device. Hindi puwedeng i-share.</div>
+      <input id="lic-input" class="inp" placeholder="TINDAHAN-XXXX-XXXX" style="font-family:monospace;font-size:15px;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px" oninput="this.value=this.value.toUpperCase()">
+      <div id="lic-error" style="font-size:11px;color:var(--red);display:none;margin-bottom:10px"></div>
+      <button class="btn btn-primary btn-full" onclick="activateLicense()" id="activate-btn">✅ I-activate</button>
+
+      <div style="margin-top:20px;border-top:1px solid var(--border);padding-top:16px">
+        <div style="font-size:10px;color:var(--text-dim);margin-bottom:10px">AVAILABLE PLANS</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;justify-content:space-between;font-size:11px;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-mid)">Basic — 1 device, core features</span><span style="color:var(--accent);font-weight:700">₱299/mo</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-mid)">Pro — 3 devices + AI assistant</span><span style="color:var(--accent);font-weight:700">₱599/mo</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;padding:8px 0"><span style="color:var(--text-mid)">Ultra — 5 devices + all features</span><span style="color:var(--accent);font-weight:700">₱999/mo</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP (hidden until login) -->
+<div id="main-app" style="display:none">
+  <!-- HEADER -->
+  <div id="header">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div id="header-sub" style="font-size:10px;color:var(--text-dim)"></div>
+        <div id="header-title" style="font-size:20px;font-weight:800;font-family:var(--font)"></div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <div id="low-stock-badge" style="display:none;background:rgba(255,71,87,.15);border:1px solid rgba(255,71,87,.3);border-radius:10px;padding:5px 10px;font-size:9px;color:var(--red);font-weight:700"></div>
+        <div id="plan-badge" style="background:rgba(245,166,35,.15);border:1px solid rgba(245,166,35,.2);border-radius:10px;padding:5px 10px;font-size:10px;color:var(--accent);font-weight:700"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div id="content">
+
+    <!-- HOME TAB -->
+    <div id="tab-home" class="tab-content active section">
+      <!-- Hero -->
+      <div style="background:linear-gradient(135deg,rgba(245,166,35,.12),rgba(217,119,6,.07));border:1px solid rgba(245,166,35,.25);border-radius:22px;padding:22px 20px;position:relative;overflow:hidden">
+        <div style="position:absolute;bottom:-40px;right:-40px;font-size:110px;opacity:.05">🏪</div>
+        <div style="position:relative">
+          <div id="home-date" style="font-size:11px;color:var(--accent);font-weight:600"></div>
+          <div id="home-time" style="font-size:28px;font-weight:800;color:var(--accent);font-family:var(--font);margin-top:2px"></div>
+          <div id="home-greet" style="font-size:15px;color:var(--text);font-weight:600;margin-top:4px"></div>
+          <div id="home-alerts" style="margin-top:10px;display:flex;flex-direction:column;gap:6px"></div>
+        </div>
+      </div>
+      <!-- Quick Sale -->
+      <div class="card card-glow-green">
+        <div style="font-size:11px;color:var(--green);font-weight:700;margin-bottom:10px">⚡ MABILIS NA BENTA</div>
+        <div style="display:flex;gap:8px">
+          <input id="qs-desc" class="inp" placeholder="Ano ang nabenta?" style="flex:2">
+          <input id="qs-amt" class="inp" placeholder="₱ Halaga" type="number" style="flex:1" onkeydown="if(event.key==='Enter')quickSale()">
+          <button class="btn btn-success btn-sm" onclick="quickSale()" style="flex-shrink:0">✓</button>
+        </div>
+      </div>
+      <!-- Stats -->
+      <div class="grid-2">
+        <div class="stat-card" id="stat-sales-today" style="border:1px solid rgba(46,213,115,.25)">
+          <div class="stat-card-bg" style="background:var(--green)"></div>
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div><div class="stat-label">Sales Ngayon</div><div class="stat-value" id="sv-sales-today" style="color:var(--green)">₱0</div><div class="stat-sub" id="ss-sales-today"></div></div>
+            <div class="stat-icon" style="background:rgba(46,213,115,.15)">💰</div>
+          </div>
+        </div>
+        <div class="stat-card" style="border:1px solid rgba(245,166,35,.25)">
+          <div class="stat-card-bg" style="background:var(--accent)"></div>
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div><div class="stat-label">Kita Ngayon</div><div class="stat-value" id="sv-profit-today" style="color:var(--accent)">₱0</div><div class="stat-sub" id="ss-profit-today"></div></div>
+            <div class="stat-icon" style="background:rgba(245,166,35,.15)">📊</div>
+          </div>
+        </div>
+        <div class="stat-card" style="border:1px solid rgba(30,144,255,.25)">
+          <div class="stat-card-bg" style="background:var(--blue)"></div>
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div><div class="stat-label">Txn Ngayon</div><div class="stat-value" id="sv-txn-today" style="color:var(--blue)">0</div><div class="stat-sub">transaksyon</div></div>
+            <div class="stat-icon" style="background:rgba(30,144,255,.15)">🧾</div>
+          </div>
+        </div>
+        <div class="stat-card" id="stat-utang" style="border:1px solid rgba(255,71,87,.25)">
+          <div class="stat-card-bg" style="background:var(--red)"></div>
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div><div class="stat-label">Total Utang</div><div class="stat-value" id="sv-utang" style="color:var(--red)">₱0</div><div class="stat-sub" id="ss-utang"></div></div>
+            <div class="stat-icon" style="background:rgba(255,71,87,.15);position:relative">📋<div class="pulse-dot" id="utang-dot" style="display:none"></div></div>
+          </div>
+        </div>
+      </div>
+      <!-- Chart -->
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+          <div style="font-size:12px;font-weight:700;color:var(--text)">Lingguhang Sales</div>
+          <div style="display:flex;gap:10px;font-size:9px"><span style="color:var(--blue)">▪ Sales</span><span style="color:var(--accent)">▪ Kita</span></div>
+        </div>
+        <div style="display:flex;gap:16px;margin-bottom:10px">
+          <div><div id="week-sales-total" style="font-size:16px;font-weight:800;color:var(--blue);font-family:var(--font)">₱0</div><div style="font-size:9px;color:var(--text-dim)">Total Sales</div></div>
+          <div><div id="week-profit-total" style="font-size:16px;font-weight:800;color:var(--accent);font-family:var(--font)">₱0</div><div style="font-size:9px;color:var(--text-dim)">Total Kita</div></div>
+        </div>
+        <div class="bar-chart" id="home-bar-chart"></div>
+      </div>
+      <!-- Low Stock on Home -->
+      <div id="home-low-stock" style="display:none" class="card card-glow-red">
+        <div style="font-size:12px;font-weight:700;color:var(--red);margin-bottom:10px">🚨 Mag-order Na!</div>
+        <div id="home-low-stock-list"></div>
+      </div>
+    </div>
+
+    <!-- POS TAB -->
+    <div id="tab-pos" class="tab-content section">
+      <div id="pos-main">
+        <div style="display:flex;gap:8px;margin-bottom:10px">
+          <input id="pos-search" class="inp" placeholder="🔍 Hanapin ang produkto..." oninput="renderPOS()" style="flex:1">
+          <button onclick="openBarcodeScanner('pos')" class="btn btn-blue btn-sm" style="flex-shrink:0;white-space:nowrap" title="Scan barcode para hanapin ang produkto">
+            <span style="font-size:16px">▦</span>
+          </button>
+        </div>
+        <div class="pill-row" id="pos-cats" style="margin-bottom:10px"></div>
+        <div id="pos-grid" class="grid-2"></div>
+        <div id="pos-cart" style="display:none;margin-top:12px" class="card card-glow-gold">
+          <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:10px">🛒 Cart</div>
+          <div id="pos-cart-items"></div>
+          <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:11px;color:var(--text-mid)">Diskwento %</span>
+              <input id="pos-discount" class="inp inp-sm" type="number" value="0" min="0" max="100" style="width:80px;text-align:right" oninput="updateCartTotal()">
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:14px;font-weight:700;color:var(--text)">TOTAL</span>
+              <span id="pos-total" style="font-size:20px;font-weight:800;color:var(--accent);font-family:var(--font)">₱0</span>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input id="pos-cash" class="inp" type="number" placeholder="₱ Cash ibinayad" oninput="updateCartTotal()" style="flex:1">
+              <span id="pos-change" style="font-size:11px;color:var(--green);font-weight:700;white-space:nowrap;min-width:70px;text-align:right"></span>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-ghost btn-sm" onclick="clearCart()">Burahin</button>
+              <button class="btn btn-primary" onclick="checkout()" style="flex:1">✓ Checkout</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="pos-receipt" style="display:none" class="section">
+        <div class="card card-glow-green" style="text-align:center">
+          <div style="font-size:48px;margin-bottom:8px">✅</div>
+          <div style="font-size:18px;font-weight:800;color:var(--green);font-family:var(--font)">Bayad Na!</div>
+          <div id="receipt-time" style="font-size:11px;color:var(--text-mid);margin-bottom:18px"></div>
+          <div style="background:var(--surface);border-radius:14px;padding:18px;text-align:left;margin-bottom:16px">
+            <div style="font-size:11px;font-weight:700;color:var(--text-mid);margin-bottom:10px;text-align:center" id="receipt-store-name">🏪 Tindahan Ko — RESIBO</div>
+            <div id="receipt-items"></div>
+            <div style="border-top:1px dashed var(--border);margin-top:10px;padding-top:10px">
+              <div class="receipt-line"><span>Subtotal</span><span id="r-subtotal"></span></div>
+              <div class="receipt-line" id="r-discount-row" style="display:none;color:var(--green)"><span id="r-discount-label"></span><span id="r-discount-val"></span></div>
+              <div class="receipt-line" style="font-weight:800;font-size:14px;margin-top:4px"><span>TOTAL</span><span id="r-total"></span></div>
+              <div class="receipt-line" style="color:var(--text-mid)"><span>Cash</span><span id="r-cash"></span></div>
+              <div class="receipt-line" style="font-weight:800;color:var(--green)"><span>Sukli</span><span id="r-change"></span></div>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px">
+            <button class="btn btn-ghost" onclick="newTransaction()" style="flex:1">Bagong Txn</button>
+            <button class="btn btn-success" style="flex:1">🖨️ I-print</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INVENTORY TAB -->
+    <div id="tab-inventory" class="tab-content section">
+      <div class="grid-3" id="inv-summary"></div>
+      <div style="display:flex;gap:8px;margin-top:2px">
+        <input id="inv-search" class="inp" placeholder="🔍 Hanapin..." oninput="renderInventory()" style="flex:1">
+        <button class="btn btn-primary btn-sm" onclick="toggleAddProduct()" id="add-prod-btn">+ Dagdag</button>
+      </div>
+      <div class="pill-row" id="inv-filters"></div>
+      <div class="pill-row" id="inv-sorts"></div>
+      <div id="add-product-form" style="display:none" class="card card-glow-gold">
+        <div id="add-form-title" style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:12px">➕ Bagong Produkto</div>
+
+        <!-- PHOTO SECTION -->
+        <div style="margin-bottom:12px">
+          <!-- Preview -->
+          <div id="pf-photo-preview" style="display:none;margin-bottom:8px;position:relative">
+            <img id="pf-photo-img" style="width:100%;max-height:180px;object-fit:cover;border-radius:12px;display:block" src="" alt="Product photo">
+            <button onclick="clearPhoto()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:26px;height:26px;cursor:pointer;font-size:14px;line-height:1">×</button>
+          </div>
+          <!-- Camera viewfinder (hidden until opened) -->
+          <div id="pf-camera-wrap" style="display:none;position:relative;margin-bottom:8px">
+            <video id="pf-video" autoplay playsinline style="width:100%;max-height:220px;object-fit:cover;border-radius:12px;display:block;background:#000"></video>
+            <div style="position:absolute;bottom:10px;left:0;right:0;display:flex;justify-content:center;gap:12px">
+              <button onclick="capturePhoto()" style="background:var(--accent);color:var(--accent-text);border:none;border-radius:50%;width:52px;height:52px;font-size:22px;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.4)">📸</button>
+              <button onclick="stopCamera()" style="background:rgba(0,0,0,.5);color:#fff;border:none;border-radius:50%;width:52px;height:52px;font-size:18px;cursor:pointer">✕</button>
+            </div>
+            <!-- Switch camera button -->
+            <button id="switch-cam-btn" onclick="switchCamera()" style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,.5);color:#fff;border:none;border-radius:20px;padding:6px 10px;font-size:10px;cursor:pointer">🔄 Flip</button>
+          </div>
+          <!-- Hidden canvas for capture -->
+          <canvas id="pf-canvas" style="display:none"></canvas>
+          <!-- Hidden file input for gallery/upload -->
+          <input type="file" id="pf-file-input" accept="image/*" style="display:none" onchange="handleFileUpload(event)">
+          <!-- Buttons row -->
+          <div id="pf-photo-btns" style="display:flex;gap:8px">
+            <button onclick="openCamera()" class="btn btn-blue btn-sm" style="flex:1">📷 Camera</button>
+            <button onclick="document.getElementById('pf-file-input').click()" class="btn btn-ghost btn-sm" style="flex:1">🖼️ Gallery</button>
+          </div>
+        </div>
+
+        <!-- FIELDS -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <!-- Barcode field with scan button -->
+          <div style="grid-column:1/-1;display:flex;gap:8px;align-items:center">
+            <input id="pf-barcode" class="inp inp-sm" placeholder="Barcode (optional)" style="flex:1">
+            <button onclick="openBarcodeScanner('form')" class="btn btn-blue btn-sm" style="flex-shrink:0;white-space:nowrap">
+              <span style="font-size:14px">▦</span> Scan
+            </button>
+          </div>
+          <input id="pf-name" class="inp inp-sm" placeholder="Pangalan" style="grid-column:1/-1">
+          <input id="pf-cat" class="inp inp-sm" placeholder="Kategorya">
+          <input id="pf-unit" class="inp inp-sm" placeholder="Unit (sachet/can...)">
+          <input id="pf-stock" class="inp inp-sm" type="number" placeholder="Stock">
+          <input id="pf-min" class="inp inp-sm" type="number" placeholder="Min Stock">
+          <input id="pf-price" class="inp inp-sm" type="number" placeholder="Presyo (₱)">
+          <input id="pf-cost" class="inp inp-sm" type="number" placeholder="Gastos (₱)">
+          <input id="pf-expiry" class="inp inp-sm" type="date" style="grid-column:1/-1">
+        </div>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button class="btn btn-ghost btn-sm" onclick="cancelProductForm()">Kanselahin</button>
+          <button class="btn btn-primary" onclick="saveProduct()" style="flex:1">💾 I-save</button>
+        </div>
+      </div>
+      <div id="inv-list" class="section"></div>
+    </div>
+
+    <!-- UTANG TAB -->
+    <div id="tab-utang" class="tab-content section">
+      <div id="utang-main">
+        <div style="background:linear-gradient(135deg,rgba(255,71,87,.12),rgba(255,71,87,.06));border:1px solid rgba(255,71,87,.25);border-radius:18px;padding:18px 20px">
+          <div style="font-size:10px;color:var(--red);font-weight:600;text-transform:uppercase;letter-spacing:1px">Total Utang sa'yo</div>
+          <div id="utang-total-display" style="font-size:32px;font-weight:800;color:var(--red);font-family:var(--font)">₱0</div>
+          <div id="utang-summary" style="font-size:10px;color:var(--text-mid);margin-top:2px"></div>
+        </div>
+        <div class="pill-row" id="utang-filters"></div>
+        <input id="utang-search" class="inp" placeholder="🔍 Hanapin..." oninput="renderUtangList()">
+        <!-- Add Person -->
+        <div class="card card-glow-gold">
+          <div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:10px">👤 Magdagdag ng Tao</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <input id="new-utang-name" class="inp inp-sm" placeholder="Pangalan">
+            <div style="display:flex;gap:8px">
+              <input id="new-utang-phone" class="inp inp-sm" placeholder="Phone (optional)" style="flex:1">
+              <input id="new-utang-limit" class="inp inp-sm" type="number" placeholder="Limit" style="width:90px" value="200">
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="addUtangPerson()">+ Idagdag</button>
+          </div>
+        </div>
+        <div id="utang-list" class="section"></div>
+      </div>
+      <!-- Detail View -->
+      <div id="utang-detail" style="display:none" class="section">
+        <button onclick="backToUtangList()" class="btn btn-ghost btn-sm">← Bumalik</button>
+        <div id="utang-detail-content"></div>
+      </div>
+    </div>
+
+    <!-- SALES TAB -->
+    <div id="tab-sales" class="tab-content section">
+      <div class="card card-glow-gold">
+        <div class="grid-2" style="gap:10px">
+          <div style="background:var(--surface);border-radius:12px;padding:12px">
+            <div style="font-size:9px;color:var(--text-dim);margin-bottom:4px">💰 Sales</div>
+            <div id="sales-total" style="font-size:18px;font-weight:800;color:var(--blue);font-family:var(--font)">₱0</div>
+          </div>
+          <div style="background:var(--surface);border-radius:12px;padding:12px">
+            <div style="font-size:9px;color:var(--text-dim);margin-bottom:4px">📊 Kita</div>
+            <div id="profit-total" style="font-size:18px;font-weight:800;color:var(--green);font-family:var(--font)">₱0</div>
+          </div>
+          <div style="background:var(--surface);border-radius:12px;padding:12px">
+            <div style="font-size:9px;color:var(--text-dim);margin-bottom:4px">🧾 Transactions</div>
+            <div id="txn-total" style="font-size:18px;font-weight:800;color:var(--accent);font-family:var(--font)">0</div>
+          </div>
+          <div style="background:var(--surface);border-radius:12px;padding:12px">
+            <div style="font-size:9px;color:var(--text-dim);margin-bottom:4px">📦 Avg Order</div>
+            <div id="avg-order" style="font-size:18px;font-weight:800;color:var(--purple);font-family:var(--font)">₱0</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;margin-top:12px">
+          <div style="background:var(--surface);border-radius:12px;padding:10px 14px;flex:1">
+            <div style="font-size:9px;color:var(--text-dim)">Margin</div>
+            <div id="profit-margin" style="font-size:18px;font-weight:800;font-family:var(--font)">0%</div>
+          </div>
+          <div style="background:var(--surface);border-radius:12px;padding:10px 14px;flex:1">
+            <div style="font-size:9px;color:var(--text-dim)">Best Day</div>
+            <div id="best-day" style="font-size:12px;font-weight:800;color:var(--accent)"></div>
+            <div id="best-day-amt" style="font-size:10px;color:var(--text-dim)"></div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+          <div style="font-size:12px;font-weight:700;color:var(--text)">Daily Breakdown</div>
+          <div style="display:flex;gap:8px;font-size:9px"><span style="color:var(--blue)">▪ Sales</span><span style="color:var(--accent)">▪ Kita</span></div>
+        </div>
+        <div class="bar-chart" id="sales-bar-chart"></div>
+        <div style="margin-top:12px;display:flex;flex-direction:column;gap:6px" id="sales-breakdown"></div>
+      </div>
+      <!-- TOP PRODUCTS — fixed to not overflow -->
+      <div class="card">
+        <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:14px">🏆 Top Products</div>
+        <div id="top-products-list" style="display:flex;flex-direction:column;gap:10px"></div>
+      </div>
+    </div>
+
+    <!-- SERVICES TAB -->
+    <div id="tab-services" class="tab-content section">
+      <!-- Summary -->
+      <div class="grid-2">
+        <div class="card" style="text-align:center;padding:12px">
+          <div style="font-size:9px;color:var(--text-dim)">E-Load Komisyon</div>
+          <div id="eload-comm-total" style="font-size:18px;font-weight:800;color:var(--blue);font-family:var(--font)">₱0.00</div>
+        </div>
+        <div class="card" style="text-align:center;padding:12px">
+          <div style="font-size:9px;color:var(--text-dim)">Bills/Cash Komisyon</div>
+          <div id="bills-comm-total" style="font-size:18px;font-weight:800;color:var(--purple);font-family:var(--font)">₱0.00</div>
+        </div>
+      </div>
+
+      <!-- Service Nav Pills -->
+      <div class="pill-row" id="service-nav"></div>
+
+      <!-- E-LOAD SECTION -->
+      <div id="svc-eload" style="display:none" class="section">
+        <div class="card card-glow-blue">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <div style="font-size:12px;font-weight:700;color:var(--blue)">📱 E-Load</div>
+            <button class="btn btn-blue btn-sm" onclick="openManageProviders()">⚙️ I-manage</button>
+          </div>
+          <div class="pill-row" id="eload-network-pills" style="margin-bottom:10px"></div>
+          <input id="eload-phone" class="inp inp-sm" placeholder="Phone Number" style="margin-bottom:8px">
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px" id="eload-amounts"></div>
+          <input id="eload-custom-amt" class="inp inp-sm" type="number" placeholder="O i-type ang custom amount" style="margin-bottom:8px">
+          <div id="eload-comm-preview" style="font-size:10px;color:var(--green);margin-bottom:8px;display:none"></div>
+          <button class="btn btn-primary btn-full btn-sm" onclick="sendEload()">📤 Magpadala ng Load</button>
+        </div>
+        <div class="card">
+          <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:10px">📋 E-Load Transactions</div>
+          <div id="eload-txn-list">
+            <div style="font-size:11px;color:var(--text-dim);text-align:center;padding:16px">Wala pang transactions.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BILLS SECTION -->
+      <div id="svc-bills" style="display:none" class="section">
+        <div class="card card-glow-purple">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <div style="font-size:12px;font-weight:700;color:var(--purple)">💳 Bills Payment</div>
+            <button class="btn btn-sm" style="background:rgba(168,85,247,.15);color:var(--purple);border:1px solid rgba(168,85,247,.3)" onclick="openManageBills()">⚙️ I-manage</button>
+          </div>
+          <div id="bills-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div>
+        </div>
+        <div class="card">
+          <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:10px">📋 Bills Transactions</div>
+          <div id="bills-txn-list">
+            <div style="font-size:11px;color:var(--text-dim);text-align:center;padding:16px">Wala pang transactions.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- GCASH/MAYA SECTION -->
+      <div id="svc-cash" style="display:none" class="section">
+        <div class="card" style="border:1px solid rgba(245,166,35,.25)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+            <div style="font-size:12px;font-weight:700;color:var(--accent)">💸 GCash / Maya Cash-In/Out</div>
+            <button class="btn btn-sm btn-ghost" onclick="openManageCash()">⚙️ I-manage</button>
+          </div>
+          <!-- Transaction Type -->
+          <div style="display:flex;gap:8px;margin-bottom:14px">
+            <button id="cash-type-in" class="btn btn-success" onclick="setCashType('cashin')" style="flex:1">📥 Cash-In</button>
+            <button id="cash-type-out" class="btn btn-ghost" onclick="setCashType('cashout')" style="flex:1">📤 Cash-Out</button>
+          </div>
+          <!-- Wallet -->
+          <div class="pill-row" id="cash-wallet-pills" style="margin-bottom:10px"></div>
+          <!-- Amount -->
+          <div style="margin-bottom:10px">
+            <div class="form-label">Amount</div>
+            <input id="cash-amount" class="inp" type="number" placeholder="₱ Halaga" oninput="calcCashFee()">
+          </div>
+          <div id="cash-fee-preview" style="font-size:11px;color:var(--green);margin-bottom:10px;padding:8px 12px;background:rgba(46,213,115,.08);border-radius:8px;display:none"></div>
+          <!-- Reference Numbers -->
+          <div style="margin-bottom:10px">
+            <div class="form-label">Reference No. (Sender)</div>
+            <input id="cash-ref-sender" class="inp inp-sm" placeholder="Ref # ng nagpadala">
+          </div>
+          <div id="cash-ref-bank-row" style="margin-bottom:10px;display:none">
+            <div class="form-label">Bank/Transfer Reference No.</div>
+            <input id="cash-ref-bank" class="inp inp-sm" placeholder="Bank transfer ref #">
+          </div>
+          <div style="margin-bottom:10px">
+            <div class="form-label">Customer Name (optional)</div>
+            <input id="cash-customer" class="inp inp-sm" placeholder="Pangalan ng customer">
+          </div>
+          <div style="margin-bottom:14px">
+            <div class="form-label">Notes (optional)</div>
+            <input id="cash-notes" class="inp inp-sm" placeholder="Dagdag na notes">
+          </div>
+          <button class="btn btn-primary btn-full" onclick="processCash()">✓ I-process ang Transaction</button>
+        </div>
+        <div class="card">
+          <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:10px">📋 Cash-In/Out Transactions</div>
+          <div id="cash-txn-list">
+            <div style="font-size:11px;color:var(--text-dim);text-align:center;padding:16px">Wala pang transactions.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI TAB -->
+    <div id="tab-ai" class="tab-content" style="display:none;flex-direction:column;height:calc(100vh - 190px)">
+      <div class="card card-glow-purple" style="margin-bottom:12px;padding:14px 16px">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="font-size:28px">🤖</div>
+            <div>
+              <div style="font-size:13px;font-weight:800;color:var(--purple);font-family:var(--font)">TindaBot AI</div>
+              <div style="font-size:9px;color:var(--text-dim)">Powered by Groq (Llama 3.3) • FREE</div>
+            </div>
+          </div>
+          <div style="width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green)" id="ai-status-dot"></div>
+        </div>
+        <div id="no-groq-key-warning" style="display:none;margin-top:8px;background:rgba(255,71,87,.15);border:1px solid rgba(255,71,87,.3);border-radius:8px;padding:8px 10px;font-size:10px;color:var(--red)">
+          ⚠️ Walang Groq API key. Pumunta sa Settings → AI para i-set. Libre sa groq.com!
+        </div>
+      </div>
+      <!-- Quick Questions -->
+      <div class="pill-row" id="ai-quick-qs" style="margin-bottom:8px"></div>
+      <!-- Messages -->
+      <div id="chat-messages"></div>
+      <!-- Input -->
+      <div style="border-top:1px solid var(--border);padding-top:10px">
+        <div style="display:flex;gap:8px;margin-bottom:6px">
+          <input id="ai-input" class="inp" placeholder="Tanungin si TindaBot..." onkeydown="if(event.key==='Enter'&&!event.shiftKey)sendAI()">
+          <button class="btn btn-primary btn-sm" onclick="sendAI()" id="ai-send-btn">📤</button>
+        </div>
+        <button onclick="clearAIChat()" style="background:none;border:none;color:var(--text-dim);font-size:10px;cursor:pointer;font-family:var(--body)">🗑️ I-clear ang chat</button>
+      </div>
+    </div>
+
+    <!-- SETTINGS TAB -->
+    <div id="tab-settings" class="tab-content section">
+      <div class="pill-row" id="settings-nav"></div>
+
+      <div id="settings-store" class="section" style="display:none">
+        <div class="card">
+          <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:14px">🏪 Impormasyon ng Tindahan</div>
+          <div class="form-row"><div class="form-label">Pangalan ng Tindahan</div><input id="s-store-name" class="inp inp-sm" oninput="saveSetting('storeName',this.value);updateHeader()"></div>
+          <div class="form-row"><div class="form-label">Pangalan ng May-ari</div><input id="s-owner" class="inp inp-sm" oninput="saveSetting('ownerName',this.value)"></div>
+          <div class="form-row"><div class="form-label">Address</div><input id="s-address" class="inp inp-sm" oninput="saveSetting('address',this.value);updateHeader()"></div>
+          <div class="form-row"><div class="form-label">Phone</div><input id="s-phone" class="inp inp-sm" oninput="saveSetting('phone',this.value)"></div>
+          <div class="form-row">
+            <div class="form-label">Currency Symbol</div>
+            <div style="display:flex;gap:8px;margin-top:4px">
+              <button class="btn btn-sm" onclick="setSetting('currency','₱');renderSettingsStore()" id="cur-php">₱</button>
+              <button class="btn btn-sm btn-ghost" onclick="setSetting('currency','$');renderSettingsStore()" id="cur-usd">$</button>
+              <button class="btn btn-sm btn-ghost" onclick="setSetting('currency','€');renderSettingsStore()" id="cur-eur">€</button>
+            </div>
+          </div>
+          <div class="form-row"><div class="form-label">Default Utang Limit</div><input id="s-utang-limit" class="inp inp-sm" type="number" oninput="saveSetting('defaultUtangLimit',+this.value)"></div>
+        </div>
+      </div>
+
+      <div id="settings-display" class="section" style="display:none">
+        <div class="card">
+          <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:14px">🎨 Tema</div>
+          <div class="grid-2" id="theme-grid"></div>
+        </div>
+      </div>
+
+      <div id="settings-ai" class="section" style="display:none">
+        <div class="card">
+          <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:4px">🤖 Groq AI Configuration</div>
+          <div style="font-size:10px;color:var(--text-mid);margin-bottom:16px">Libre ang Groq! Kumuha ng API key sa <span style="color:var(--blue)">console.groq.com</span></div>
+          <div class="form-row">
+            <div class="form-label">Groq API Key</div>
+            <input id="s-groq-key" class="inp inp-sm" type="password" placeholder="gsk_..." oninput="saveSetting('groqKey',this.value);checkGroqKey()">
+            <div style="font-size:9px;color:var(--text-dim);margin-top:4px">Libre na makukuha sa console.groq.com → API Keys</div>
+          </div>
+          <div class="form-row">
+            <div class="form-label">AI Model</div>
+            <select id="s-groq-model" onchange="saveSetting('groqModel',this.value)" style="margin-top:4px">
+              <option value="llama-3.3-70b-versatile">Llama 3.3 70B (Best, FREE)</option>
+              <option value="llama-3.1-8b-instant">Llama 3.1 8B (Faster, FREE)</option>
+              <option value="mixtral-8x7b-32768">Mixtral 8x7B (FREE)</option>
+              <option value="gemma2-9b-it">Gemma 2 9B (FREE)</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <div class="form-label">AI Personality</div>
+            <select id="s-ai-personality" onchange="saveSetting('aiPersonality',this.value)" style="margin-top:4px">
+              <option value="makulit">Makulit at Masaya 😄</option>
+              <option value="seryoso">Seryoso at Propesyonal</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div id="settings-security" class="section" style="display:none">
+        <div class="card">
+          <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:14px">🔐 Seguridad</div>
+          <div class="settings-row">
+            <div><div class="settings-row-label">PIN Lock</div><div class="settings-row-sub" id="pin-status-text"></div></div>
+            <button class="toggle" id="pin-toggle" onclick="togglePIN()"><div class="toggle-thumb" id="pin-thumb"></div></button>
+          </div>
+          <div id="pin-form" style="display:none;padding:10px 0">
+            <div class="form-label">Bagong PIN (4-6 digits)</div>
+            <div style="display:flex;gap:8px;margin-top:4px">
+              <input id="new-pin-input" class="inp inp-sm" type="password" placeholder="••••••" maxlength="6" style="letter-spacing:8px;text-align:center;font-family:monospace;flex:1">
+              <button class="btn btn-primary btn-sm" onclick="savePIN()">I-save</button>
+            </div>
+          </div>
+          <div style="padding:10px 0;border-bottom:1px solid var(--border)">
+            <div class="form-label">Device ID</div>
+            <div id="device-id-setting" style="font-family:monospace;font-size:10px;color:var(--text-mid);background:var(--surface);border-radius:8px;padding:8px 12px;margin-top:4px;word-break:break-all"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="settings-data" class="section" style="display:none">
+        <div class="card">
+          <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:14px">💾 Data Management</div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="background:var(--surface);border-radius:12px;padding:14px">
+              <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:4px">📤 I-export ang Data</div>
+              <div style="font-size:10px;color:var(--text-dim);margin-bottom:10px">I-download lahat ng data bilang JSON backup</div>
+              <button class="btn btn-success btn-sm" onclick="exportData()">📥 I-download Backup</button>
+            </div>
+            <div style="background:var(--surface);border-radius:12px;padding:14px">
+              <div style="font-size:11px;font-weight:700;color:var(--red);margin-bottom:4px">🗑️ I-clear ang Data</div>
+              <div style="font-size:10px;color:var(--text-dim);margin-bottom:10px">Burahin ang inventory, utang, sales. Hindi na maibabalik!</div>
+              <button class="btn btn-danger btn-sm" onclick="clearAllData()">⚠️ Clear All Data</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="settings-account" class="section" style="display:none">
+        <div class="card">
+          <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:14px">👤 Account</div>
+          <div id="account-info"></div>
+          <button class="btn btn-danger btn-full" onclick="logout()" style="margin-top:16px">🚪 Mag-logout</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+
+  <!-- BOTTOM NAV -->
+  <nav id="bottom-nav">
+    <button class="nav-btn active" onclick="switchTab('home')" id="nav-home">
+      <div class="nav-icon">⌂</div><div class="nav-label">Home</div><div class="nav-dot"></div>
+    </button>
+    <button class="nav-btn" onclick="switchTab('pos')" id="nav-pos">
+      <div class="nav-icon">🧾</div><div class="nav-label">POS</div><div class="nav-dot"></div>
+    </button>
+    <button class="nav-btn" onclick="switchTab('inventory')" id="nav-inventory">
+      <div class="nav-icon">📦</div><div class="nav-label">Stocks</div><div class="nav-dot"></div>
+      <div class="nav-badge" id="inv-badge" style="display:none"></div>
+    </button>
+    <button class="nav-btn" onclick="switchTab('utang')" id="nav-utang">
+      <div class="nav-icon">📋</div><div class="nav-label">Utang</div><div class="nav-dot"></div>
+      <div class="nav-badge" id="utang-badge" style="display:none"></div>
+    </button>
+    <button class="nav-btn" onclick="switchTab('sales')" id="nav-sales">
+      <div class="nav-icon">📈</div><div class="nav-label">Sales</div><div class="nav-dot"></div>
+    </button>
+    <button class="nav-btn" onclick="switchTab('services')" id="nav-services">
+      <div class="nav-icon">⚡</div><div class="nav-label">Serbisyo</div><div class="nav-dot"></div>
+    </button>
+    <button class="nav-btn" onclick="switchTab('ai')" id="nav-ai">
+      <div class="nav-icon">🤖</div><div class="nav-label">AI</div><div class="nav-dot"></div>
+    </button>
+    <button class="nav-btn" onclick="switchTab('settings')" id="nav-settings">
+      <div class="nav-icon">⚙️</div><div class="nav-label">Settings</div><div class="nav-dot"></div>
+    </button>
+  </nav>
+</div><!-- /main-app -->
+
+<!-- MODAL OVERLAY -->
+<div id="modal-overlay" class="modal-overlay" style="display:none" onclick="closeModal(event)">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<!-- BARCODE SCANNER OVERLAY -->
+<div id="barcode-overlay" style="display:none;position:fixed;inset:0;background:#000;z-index:300;flex-direction:column;align-items:center;justify-content:flex-start">
+  <!-- Header -->
+  <div style="width:100%;max-width:430px;padding:16px 18px;display:flex;justify-content:space-between;align-items:center;position:relative;z-index:2">
+    <div>
+      <div style="font-size:16px;font-weight:800;color:#fff;font-family:var(--font)" id="bc-title">Barcode Scanner</div>
+      <div style="font-size:10px;color:rgba(255,255,255,.5)" id="bc-subtitle">I-point ang camera sa barcode</div>
+    </div>
+    <button onclick="stopBarcodeScanner()" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:50%;width:36px;height:36px;font-size:18px;cursor:pointer">✕</button>
+  </div>
+
+  <!-- Viewfinder -->
+  <div style="position:relative;width:100%;max-width:430px;flex:1;overflow:hidden">
+    <video id="bc-video" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;display:block"></video>
+
+    <!-- Dark overlay with transparent window -->
+    <div style="position:absolute;inset:0;pointer-events:none">
+      <!-- Top dark -->
+      <div style="position:absolute;top:0;left:0;right:0;height:20%;background:rgba(0,0,0,.55)"></div>
+      <!-- Bottom dark -->
+      <div style="position:absolute;bottom:0;left:0;right:0;height:28%;background:rgba(0,0,0,.55)"></div>
+      <!-- Left dark -->
+      <div style="position:absolute;top:20%;left:0;width:8%;height:52%;background:rgba(0,0,0,.55)"></div>
+      <!-- Right dark -->
+      <div style="position:absolute;top:20%;right:0;width:8%;height:52%;background:rgba(0,0,0,.55)"></div>
+
+      <!-- Scan window border corners -->
+      <div style="position:absolute;top:20%;left:8%;right:8%;height:52%">
+        <!-- Corner TL -->
+        <div style="position:absolute;top:0;left:0;width:28px;height:28px;border-top:3px solid var(--accent);border-left:3px solid var(--accent);border-radius:4px 0 0 0"></div>
+        <!-- Corner TR -->
+        <div style="position:absolute;top:0;right:0;width:28px;height:28px;border-top:3px solid var(--accent);border-right:3px solid var(--accent);border-radius:0 4px 0 0"></div>
+        <!-- Corner BL -->
+        <div style="position:absolute;bottom:0;left:0;width:28px;height:28px;border-bottom:3px solid var(--accent);border-left:3px solid var(--accent);border-radius:0 0 0 4px"></div>
+        <!-- Corner BR -->
+        <div style="position:absolute;bottom:0;right:0;width:28px;height:28px;border-bottom:3px solid var(--accent);border-right:3px solid var(--accent);border-radius:0 0 4px 0"></div>
+        <!-- Laser line -->
+        <div id="bc-laser" style="position:absolute;left:4px;right:4px;height:2px;background:linear-gradient(90deg,transparent,var(--red),var(--accent),var(--red),transparent);box-shadow:0 0 8px var(--red);animation:laser 2s ease-in-out infinite;top:50%"></div>
+      </div>
+    </div>
+
+    <!-- Result flash -->
+    <div id="bc-flash" style="position:absolute;inset:0;background:rgba(46,213,115,.25);display:none;pointer-events:none"></div>
+  </div>
+
+  <!-- Bottom panel -->
+  <div style="width:100%;max-width:430px;padding:16px 18px 36px;background:rgba(0,0,0,.8)">
+    <!-- Manual barcode entry fallback -->
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <input id="bc-manual-input" class="inp" placeholder="O i-type ang barcode manually..." style="flex:1;background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);color:#fff">
+      <button onclick="onBarcodeManual()" class="btn btn-primary btn-sm">OK</button>
+    </div>
+    <!-- Status -->
+    <div id="bc-status" style="font-size:12px;color:rgba(255,255,255,.6);text-align:center;min-height:18px"></div>
+    <!-- Flip camera -->
+    <div style="display:flex;justify-content:center;margin-top:12px">
+      <button onclick="flipBarcodeCamera()" style="background:rgba(255,255,255,.1);border:none;color:rgba(255,255,255,.7);border-radius:20px;padding:8px 18px;font-size:11px;cursor:pointer;font-family:var(--body)">🔄 Flip Camera</button>
+    </div>
+  </div>
+</div>
+
+</div><!-- /app -->
+
+<script>
+/* ═══════════════════════════════════════════
+   TINDAHAN KO ULTRA v4.0 — Pure HTML
+   ✅ Groq AI only (FREE)
+   ✅ localStorage persistence
+   ✅ License system
+   ✅ Customizable services
+   ✅ No horizontal overflow
+═══════════════════════════════════════════ */
+
+// ── STORAGE ───────────────────────────────
+const LS={
+  get:(k,d)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch{return d}},
+  set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}},
+  del:(k)=>{try{localStorage.removeItem(k)}catch{}}
+};
+
+// ── LICENSE ───────────────────────────────
+// TO SELL: Replace this object with a fetch() call to your own server
+// e.g. const res = await fetch('https://yourserver.com/validate?key='+key)
+const LICENSES={
+  'TINDAHAN-DEMO-2025':{plan:'Demo',expires:'2026-12-31',trialDays:7},
+  'TINDAHAN-DEV-9999': {plan:'Developer',expires:'2099-12-31'}, // Your personal key — no expiry
+  'TINDAHAN-BASIC-001':{plan:'Basic',expires:'2026-12-31'},
+  'TINDAHAN-PRO-001':  {plan:'Pro',expires:'2026-12-31'},
+  'TINDAHAN-ULTRA-001':{plan:'Ultra',expires:'2026-12-31'},
+};
+
+function getDeviceId(){
+  let id=LS.get('__device_id',null);
+  if(!id){id='DEV-'+Math.random().toString(36).slice(2,8).toUpperCase()+'-'+Date.now().toString(36).toUpperCase();LS.set('__device_id',id);}
+  return id;
+}
+
+function validateLicense(key){
+  const k=key.toUpperCase().trim();
+  const lic=LICENSES[k];
+  if(!lic) return {valid:false,reason:'Invalid license key.'};
+  // Check device binding (anti-share)
+  const bound=LS.get('__lic_bind_'+k,null);
+  const deviceId=getDeviceId();
+  if(bound&&bound!==deviceId) return {valid:false,reason:'License already activated on another device. Contact support to transfer.'};
+  // Check expiry
+  if(new Date(lic.expires)<new Date()) return {valid:false,reason:'License expired. Please renew your subscription.'};
+  // Demo: check if trial days exceeded
+  if(lic.trialDays){
+    const firstUse=LS.get('__demo_first_use_'+k,null);
+    if(firstUse){
+      const daysSince=(Date.now()-firstUse)/(1000*60*60*24);
+      if(daysSince>lic.trialDays) return {valid:false,reason:`Demo expired (${lic.trialDays}-day trial). Please purchase a license.`};
+    } else {
+      LS.set('__demo_first_use_'+k,Date.now());
+    }
+  }
+  LS.set('__lic_bind_'+k,deviceId);
+  return {valid:true,...lic};
+}
+
+// ── DEFAULT DATA ──────────────────────────
+const DEFAULT_PRODUCTS=[
+  {id:1,name:'Lucky Me Pancit Canton',cat:'Noodles',stock:48,min:20,price:14,cost:10,expiry:'2025-08-01',sold:142,unit:'sachet'},
+  {id:2,name:'Milo 22g Sachet',cat:'Beverages',stock:6,min:24,price:8,cost:5.5,expiry:'2025-12-01',sold:95,unit:'sachet'},
+  {id:3,name:'Palmolive Shampoo 12ml',cat:'Personal Care',stock:30,min:15,price:8,cost:5,expiry:'2026-03-01',sold:61,unit:'sachet'},
+  {id:4,name:'Marlboro Red (Tingi)',cat:'Cigarettes',stock:2,min:10,price:6,cost:4,expiry:'2025-10-01',sold:280,unit:'stick'},
+  {id:5,name:'Royal Tru-Orange 500ml',cat:'Beverages',stock:24,min:12,price:22,cost:16,expiry:'2025-07-15',sold:78,unit:'bottle'},
+  {id:6,name:'Magic Sarap 8g',cat:'Condiments',stock:60,min:30,price:5,cost:3,expiry:'2025-11-01',sold:210,unit:'sachet'},
+  {id:7,name:'Argentina Corned Beef',cat:'Canned Goods',stock:15,min:10,price:45,cost:33,expiry:'2026-06-01',sold:38,unit:'can'},
+  {id:8,name:'Bear Brand 33g',cat:'Dairy',stock:40,min:20,price:16,cost:11,expiry:'2025-09-01',sold:55,unit:'sachet'},
+];
+const DEFAULT_SALES=[
+  {date:'Jun 1',sales:1240,profit:380,txn:47},{date:'Jun 2',sales:980,profit:290,txn:38},
+  {date:'Jun 3',sales:1560,profit:480,txn:62},{date:'Jun 4',sales:820,profit:240,txn:31},
+  {date:'Jun 5',sales:1890,profit:570,txn:71},{date:'Jun 6',sales:1340,profit:410,txn:53},
+  {date:'Jun 7',sales:2100,profit:650,txn:84},
+];
+const DEFAULT_UTANG=[
+  {id:1,name:'Aling Nena',avatar:'AN',color:'#f5a623',items:[{desc:'Lucky Me x3, Milo x2',amount:58,date:'Jun 1'},{desc:'Softdrinks x2',amount:44,date:'Jun 3'}],paid:20,limit:150,phone:''},
+  {id:2,name:'Kuya Boyet',avatar:'KB',color:'#1e90ff',items:[{desc:'Cigarettes, Shampoo',amount:22,date:'Jun 5'}],paid:0,limit:100,phone:''},
+  {id:3,name:'Ate Marites',avatar:'AM',color:'#a855f7',items:[{desc:'Groceries',amount:230,date:'May 28'},{desc:'E-load 50',amount:50,date:'Jun 2'}],paid:100,limit:300,phone:''},
+];
+const DEFAULT_ELOAD_PROVIDERS=[
+  {id:1,name:'Globe',color:'#1e90ff',feeType:'percent',feeValue:3},
+  {id:2,name:'Smart',color:'#2ed573',feeType:'percent',feeValue:3},
+  {id:3,name:'TNT',color:'#f5a623',feeType:'percent',feeValue:3},
+  {id:4,name:'Sun',color:'#ff6b35',feeType:'percent',feeValue:4},
+  {id:5,name:'DITO',color:'#a855f7',feeType:'percent',feeValue:5},
+];
+const DEFAULT_BILLS_PROVIDERS=[
+  {id:1,name:'Meralco',icon:'⚡',feeType:'fixed',feeValue:15},
+  {id:2,name:'Maynilad',icon:'💧',feeType:'fixed',feeValue:10},
+  {id:3,name:'PLDT',icon:'📡',feeType:'fixed',feeValue:10},
+  {id:4,name:'Cignal',icon:'📺',feeType:'fixed',feeValue:15},
+  {id:5,name:'Pag-IBIG',icon:'🏠',feeType:'fixed',feeValue:12},
+  {id:6,name:'SSS',icon:'🛡️',feeType:'fixed',feeValue:10},
+];
+// GCash/Maya fee ranges: [{min,max,feeType:'fixed'|'percent',feeValue}]
+const DEFAULT_CASH_WALLETS=[
+  {id:1,name:'GCash',emoji:'💙',color:'#0066ff',feeRanges:[
+    {min:0,max:500,feeType:'fixed',feeValue:20},
+    {min:501,max:2000,feeType:'fixed',feeValue:25},
+    {min:2001,max:5000,feeType:'percent',feeValue:1},
+  ]},
+  {id:2,name:'Maya',emoji:'💚',color:'#00c878',feeRanges:[
+    {min:0,max:1000,feeType:'fixed',feeValue:20},
+    {min:1001,max:5000,feeType:'percent',feeValue:1},
+  ]},
+];
+const DEFAULT_SETTINGS={
+  storeName:'Tindahan Ko',ownerName:'Mang Rodel',address:'Pilipinas',phone:'',
+  currency:'₱',theme:'dark-gold',
+  groqKey:'',groqModel:'llama-3.3-70b-versatile',aiPersonality:'makulit',
+  lowStockAlert:true,expiryAlert:true,utangAlert:true,
+  defaultUtangLimit:200,pinEnabled:false,pin:'',
+};
+
+// ── THEMES ────────────────────────────────
+const THEMES={
+  'dark-gold':{name:'Dark Gold',bg:'#060810',surface:'#0d1117',card:'#111827',border:'#1e2a3a',accent:'#f5a623',accentDark:'#d97706',accentText:'#1a0f00',red:'#ff4757',green:'#2ed573',blue:'#1e90ff',purple:'#a855f7',text:'#f0f4ff',textMid:'#8899aa',textDim:'#445566'},
+  'dark-blue':{name:'Midnight Blue',bg:'#05080f',surface:'#0a0f1e',card:'#0f1629',border:'#1a2540',accent:'#3b82f6',accentDark:'#2563eb',accentText:'#fff',red:'#f43f5e',green:'#10b981',blue:'#60a5fa',purple:'#8b5cf6',text:'#e8f0ff',textMid:'#6b85a8',textDim:'#3a4f6a'},
+  'light-fresh':{name:'Light Fresh',bg:'#f0f4f8',surface:'#ffffff',card:'#ffffff',border:'#e2e8f0',accent:'#0ea5e9',accentDark:'#0284c7',accentText:'#fff',red:'#ef4444',green:'#22c55e',blue:'#3b82f6',purple:'#a855f7',text:'#0f172a',textMid:'#64748b',textDim:'#94a3b8'},
+  'green-tindahan':{name:'Tindahan Green',bg:'#030f09',surface:'#071a0e',card:'#0a2214',border:'#0f3320',accent:'#22c55e',accentDark:'#16a34a',accentText:'#fff',red:'#f87171',green:'#4ade80',blue:'#38bdf8',purple:'#c084fc',text:'#dcfce7',textMid:'#6aad7e',textDim:'#2d5c3c'},
+  'sari-sari-red':{name:'Sari-Sari Red',bg:'#0f0505',surface:'#1a0a0a',card:'#200f0f',border:'#3a1818',accent:'#ef4444',accentDark:'#dc2626',accentText:'#fff',red:'#fb7185',green:'#4ade80',blue:'#60a5fa',purple:'#c084fc',text:'#fff1f1',textMid:'#a07070',textDim:'#5a3030'},
+};
+
+// ── STATE ─────────────────────────────────
+let session=null;
+let products=LS.get('__products',DEFAULT_PRODUCTS);
+let utang=LS.get('__utang',DEFAULT_UTANG);
+let sales=LS.get('__sales',DEFAULT_SALES);
+let settings=LS.get('__settings',DEFAULT_SETTINGS);
+let eloadProviders=LS.get('__eload_providers',DEFAULT_ELOAD_PROVIDERS);
+let billsProviders=LS.get('__bills_providers',DEFAULT_BILLS_PROVIDERS);
+let cashWallets=LS.get('__cash_wallets',DEFAULT_CASH_WALLETS);
+let eloadTxns=LS.get('__eload_txns',[]);
+let billsTxns=LS.get('__bills_txns',[]);
+let cashTxns=LS.get('__cash_txns',[]);
+let aiMessages=LS.get('__ai_messages',[{role:'assistant',content:'Hoy Boss! Ako si TindaBot 🤖 — nakakonekta sa inyong tindahan. Tanungin mo ako ng kahit ano!'}]);
+let currentTab=LS.get('__last_tab','home');
+let cart=[];
+let posFilter='All';
+let invFilter='All';
+let invSort='name';
+let invEditId=null;
+let utangFilter='All';
+let selectedUtangId=null;
+let serviceSection='eload';
+let selectedEloadProvider=null;
+let selectedCashWallet=null;
+let cashType='cashin';
+let settingsSection='store';
+let activeSettingsSection='store';
+
+// ── UTILS ─────────────────────────────────
+const sym=()=>settings.currency||'₱';
+const peso=(n)=>`${sym()}${Number(n||0).toLocaleString('en-PH',{minimumFractionDigits:0})}`;
+const getBalance=(u)=>(u.items||[]).reduce((a,b)=>a+b.amount,0)-(u.paid||0);
+const isLow=(p)=>p.stock<=p.min;
+const isExp=(p)=>{try{return(new Date(p.expiry)-new Date())/86400000<30}catch{return false}};
+const getMargin=(p)=>p.price>0?Math.round(((p.price-p.cost)/p.price)*100):0;
+const genId=()=>Date.now()+Math.random();
+const initials=(n)=>n.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+const AVATAR_COLORS=['#f5a623','#1e90ff','#a855f7','#2ed573','#ff4fa3','#00d2d3'];
+const save=(key,val)=>{LS.set(key,val)};
+const saveProducts=()=>save('__products',products);
+const saveUtang=()=>save('__utang',utang);
+const saveSales=()=>save('__sales',sales);
+const saveSettings=()=>save('__settings',settings);
+
+function toast(msg,color='var(--accent)'){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.style.background=color;t.style.color=color===('var(--accent)')||color.includes('f5a')||color.includes('d97')?'#1a0f00':'#fff';
+  t.style.display='block';
+  clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',3000);
+}
+
+function applyTheme(themeKey){
+  const T=THEMES[themeKey]||THEMES['dark-gold'];
+  const r=document.documentElement.style;
+  r.setProperty('--bg',T.bg);r.setProperty('--surface',T.surface);r.setProperty('--card',T.card);r.setProperty('--border',T.border);
+  r.setProperty('--accent',T.accent);r.setProperty('--accent-dark',T.accentDark);r.setProperty('--accent-text',T.accentText);
+  r.setProperty('--red',T.red);r.setProperty('--green',T.green);r.setProperty('--blue',T.blue);r.setProperty('--purple',T.purple);
+  r.setProperty('--text',T.text);r.setProperty('--text-mid',T.textMid);r.setProperty('--text-dim',T.textDim);
+  settings.theme=themeKey;saveSettings();
+}
+
+// ── LOGIN ─────────────────────────────────
+document.getElementById('device-id-display').textContent=getDeviceId().slice(0,20)+'...';
+
+function showLicenseForm(){document.getElementById('login-welcome').style.display='none';document.getElementById('login-form').style.display='block';}
+function showWelcome(){document.getElementById('login-welcome').style.display='flex';document.getElementById('login-form').style.display='none';}
+
+function activateLicense(){
+  const key=document.getElementById('lic-input').value;
+  const err=document.getElementById('lic-error');
+  const btn=document.getElementById('activate-btn');
+  if(!key){err.textContent='Maglagay ng license key.';err.style.display='block';return;}
+  btn.textContent='Checking... 🔄';btn.disabled=true;
+  setTimeout(()=>{
+    const result=validateLicense(key);
+    if(result.valid){
+      session={key,plan:result.plan,loginTime:Date.now()};
+      LS.set('__session',session);
+      startApp();
+    } else {
+      err.textContent='❌ '+result.reason;err.style.display='block';
+      btn.textContent='✅ I-activate';btn.disabled=false;
+    }
+  },600);
+}
+
+function checkExistingSession(){
+  const existing=LS.get('__session',null);
+  if(existing){
+    // Validate still good
+    const result=validateLicense(existing.key);
+    if(result.valid){
+      session=existing;
+      const savedPin=LS.get('__app_pin','');
+      if(settings.pinEnabled&&savedPin){
+        showPinScreen(savedPin);
+      } else {
+        startApp();
+      }
+    } else {
+      LS.del('__session');
+    }
+  }
+}
+
+function showPinScreen(correctPin){
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('login-welcome').style.display='none';
+  document.getElementById('login-form').style.display='none';
+  const div=document.createElement('div');
+  div.style.cssText='display:flex;flex-direction:column;align-items:center;width:100%;max-width:320px;gap:12px';
+  div.innerHTML=`
+    <div style="font-size:48px">🔐</div>
+    <div style="font-size:20px;font-weight:800;font-family:var(--font);color:var(--text)">Welcome back!</div>
+    <div style="font-size:11px;color:var(--text-mid)">${settings.storeName}</div>
+    <input id="pin-entry" class="inp" type="password" maxlength="6" placeholder="I-enter ang PIN" style="text-align:center;letter-spacing:8px;font-size:20px;font-family:monospace;margin-top:8px" onkeydown="if(event.key==='Enter')checkPin('${correctPin}')">
+    <div id="pin-error" style="font-size:11px;color:var(--red);display:none">Mali ang PIN.</div>
+    <button class="btn btn-primary btn-full" onclick="checkPin('${correctPin}')">Pumasok →</button>
+    <button onclick="logout()" style="background:none;border:none;color:var(--text-dim);font-size:11px;cursor:pointer;font-family:var(--body)">Gamitin ang ibang account</button>
+  `;
+  document.getElementById('login-screen').appendChild(div);
+}
+
+function checkPin(correct){
+  const val=document.getElementById('pin-entry').value;
+  if(val===correct){startApp();}
+  else{document.getElementById('pin-error').style.display='block';document.getElementById('pin-entry').value='';}
+}
+
+function startApp(){
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('main-app').style.display='block';
+  applyTheme(settings.theme||'dark-gold');
+  updateHeader();
+  initServiceNav();
+  initSettingsNav();
+  switchSettings(activeSettingsSection);
+  renderPOS();
+  renderInventory();
+  renderUtangList();
+  renderSales();
+  renderHome();
+  checkGroqKey();
+  renderAIQuickQs();
+  renderAIMessages();
+  switchTab(currentTab);
+  // Clock
+  setInterval(updateClock,1000);
+  updateClock();
+  // Badges
+  setInterval(updateBadges,2000);
+  updateBadges();
+}
+
+function updateHeader(){
+  const name=settings.storeName||'Tindahan Ko';
+  const parts=name.split(' ');
+  const first=parts[0]||'Tindahan';
+  const rest=parts.slice(1).join(' ')||'Ko';
+  document.getElementById('header-title').innerHTML=`<span style="color:var(--text)">${first} </span><span style="color:var(--accent)">${rest}</span>`;
+  document.getElementById('header-sub').textContent=`${settings.address||''} • ${session?.plan||''} Plan`;
+  document.getElementById('plan-badge').textContent=session?.plan||'';
+  document.getElementById('receipt-store-name').textContent=`🏪 ${settings.storeName} — RESIBO`;
+}
+
+function updateBadges(){
+  const low=products.filter(isLow).length;
+  const utBadge=utang.filter(u=>getBalance(u)>0).length;
+  const invBadge=document.getElementById('inv-badge');
+  const utBadgeEl=document.getElementById('utang-badge');
+  const lowBadge=document.getElementById('low-stock-badge');
+  if(low>0){invBadge.style.display='flex';invBadge.textContent=low;lowBadge.style.display='flex';lowBadge.textContent='⚠️ '+low;}
+  else{invBadge.style.display='none';lowBadge.style.display='none';}
+  if(utBadge>0){utBadgeEl.style.display='flex';utBadgeEl.textContent=utBadge;}
+  else utBadgeEl.style.display='none';
+}
+
+// ── TAB SWITCHING ─────────────────────────
+function switchTab(tab){
+  currentTab=tab;LS.set('__last_tab',tab);
+  document.querySelectorAll('.tab-content').forEach(el=>{el.classList.remove('active');el.style.display='none';});
+  document.querySelectorAll('.nav-btn').forEach(el=>el.classList.remove('active'));
+  const tabEl=document.getElementById('tab-'+tab);
+  const navEl=document.getElementById('nav-'+tab);
+  if(tabEl){tabEl.style.display=tab==='ai'?'flex':'block';tabEl.classList.add('active');}
+  if(navEl)navEl.classList.add('active');
+  if(tab==='home')renderHome();
+  if(tab==='pos')renderPOS();
+  if(tab==='inventory')renderInventory();
+  if(tab==='utang'){renderUtangList();}
+  if(tab==='sales')renderSales();
+  if(tab==='services')renderServices();
+  if(tab==='ai'){renderAIMessages();checkGroqKey();}
+}
+
+// ── CLOCK ─────────────────────────────────
+function updateClock(){
+  const now=new Date();
+  const h=now.getHours();
+  const g=h<12?'Magandang Umaga':h<18?'Magandang Hapon':'Magandang Gabi';
+  const dateEl=document.getElementById('home-date');
+  const timeEl=document.getElementById('home-time');
+  const greetEl=document.getElementById('home-greet');
+  if(dateEl)dateEl.textContent=now.toLocaleDateString('fil-PH',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  if(timeEl)timeEl.textContent=now.toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  if(greetEl)greetEl.textContent=`${g}, ${settings.ownerName||'Boss'}! 👋`;
+}
+
+// ── BAR CHART ─────────────────────────────
+function renderBarChart(containerId,data){
+  const el=document.getElementById(containerId);
+  if(!el||!data.length)return;
+  const max=Math.max(...data.map(d=>d.sales),1);
+  el.innerHTML=data.map(d=>`
+    <div class="bar-col">
+      <div class="bar-wrap">
+        <div class="bar-profit" style="height:${(d.profit/max)*72}px"></div>
+        <div class="bar-sales" style="height:${((d.sales-d.profit)/max)*72}px"></div>
+      </div>
+      <div class="bar-label">${d.date}</div>
+    </div>
+  `).join('');
+}
+
+// ── HOME ──────────────────────────────────
+function renderHome(){
+  const today=sales[sales.length-1]||{sales:0,profit:0,txn:0};
+  const yesterday=sales[sales.length-2]||{sales:0,profit:0,txn:0};
+  const totalUtang=utang.reduce((s,u)=>s+getBalance(u),0);
+  const weekSales=sales.reduce((s,d)=>s+d.sales,0);
+  const weekProfit=sales.reduce((s,d)=>s+d.profit,0);
+
+  document.getElementById('sv-sales-today').textContent=peso(today.sales);
+  document.getElementById('ss-sales-today').textContent=(today.sales>=yesterday.sales?'↑':'↓')+' vs kahapon';
+  document.getElementById('sv-profit-today').textContent=peso(today.profit);
+  document.getElementById('ss-profit-today').textContent=today.sales>0?Math.round((today.profit/today.sales)*100)+'% margin':'';
+  document.getElementById('sv-txn-today').textContent=today.txn;
+  document.getElementById('sv-utang').textContent=peso(totalUtang);
+  document.getElementById('ss-utang').textContent=utang.filter(u=>getBalance(u)>0).length+' may utang';
+  document.getElementById('utang-dot').style.display=totalUtang>0?'block':'none';
+  document.getElementById('week-sales-total').textContent=peso(weekSales);
+  document.getElementById('week-profit-total').textContent=peso(weekProfit);
+  renderBarChart('home-bar-chart',sales);
+
+  // Low stock
+  const low=products.filter(isLow);
+  const lowDiv=document.getElementById('home-low-stock');
+  if(low.length>0){
+    lowDiv.style.display='block';
+    document.getElementById('home-low-stock-list').innerHTML=low.map(p=>`
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+        <div><div style="font-size:12px;font-weight:600;color:var(--text)">${p.name}</div><div style="font-size:9px;color:var(--text-dim)">${p.cat}</div></div>
+        <div style="text-align:right"><div style="font-size:14px;font-weight:800;color:var(--red);font-family:var(--font)">${p.stock}</div><div style="font-size:9px;color:var(--text-dim)">min:${p.min}</div></div>
+      </div>
+    `).join('');
+  } else lowDiv.style.display='none';
+}
+
+// ── QUICK SALE ────────────────────────────
+function quickSale(){
+  const amt=+document.getElementById('qs-amt').value;
+  if(!amt)return;
+  sales[sales.length-1].sales+=amt;
+  sales[sales.length-1].profit+=Math.round(amt*0.28);
+  sales[sales.length-1].txn+=1;
+  saveSales();renderHome();
+  document.getElementById('qs-desc').value='';document.getElementById('qs-amt').value='';
+  toast('Nai-record ang benta!','var(--green)');
+}
+
+// ── POS ───────────────────────────────────
+function renderPOS(){
+  const search=document.getElementById('pos-search').value.toLowerCase();
+  const cats=['All',...new Set(products.map(p=>p.cat))];
+  // Category pills
+  const catsEl=document.getElementById('pos-cats');
+  if(catsEl)catsEl.innerHTML=cats.map(c=>`<button class="pill ${posFilter===c?'active':''}" onclick="setPosFilter('${c}')">${c}</button>`).join('');
+  // Product grid
+  const filtered=products.filter(p=>(posFilter==='All'||p.cat===posFilter)&&p.name.toLowerCase().includes(search)&&p.stock>0);
+  const grid=document.getElementById('pos-grid');
+  if(grid)grid.innerHTML=filtered.map(p=>`
+    <div onclick="addToCart(${p.id})" style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:0;cursor:pointer;position:relative;overflow:hidden;transition:border .15s">
+      ${p.photo
+        ? `<img src="${p.photo}" style="width:100%;height:80px;object-fit:cover;display:block" alt="${p.name}">`
+        : `<div style="width:100%;height:44px;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:22px">📦</div>`
+      }
+      <div style="position:absolute;top:6px;right:6px;background:${p.stock<=p.min?'rgba(255,71,87,.85)':'rgba(46,213,115,.85)'};color:#fff;font-size:9px;font-weight:700;border-radius:6px;padding:2px 7px">${p.stock}</div>
+      <div style="padding:8px 10px 10px">
+        <div style="font-size:9px;color:var(--text-dim);margin-bottom:2px">${p.cat}</div>
+        <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:6px;line-height:1.3">${p.name}</div>
+        <div style="font-size:15px;font-weight:800;color:var(--accent);font-family:var(--font)">${peso(p.price)}</div>
+      </div>
+    </div>
+  `).join('');
+  renderCart();
+}
+
+function setPosFilter(f){posFilter=f;renderPOS();}
+
+function addToCart(id){
+  const p=products.find(x=>x.id===id);if(!p)return;
+  const ex=cart.find(i=>i.id===id);
+  if(ex){if(ex.qty>=p.stock){toast('Kulang na ang stock!','var(--red)');return;}ex.qty++;}
+  else cart.push({...p,qty:1});
+  renderCart();
+}
+
+function renderCart(){
+  const cartEl=document.getElementById('pos-cart');
+  if(!cart.length){cartEl.style.display='none';return;}
+  cartEl.style.display='block';
+  const discount=+document.getElementById('pos-discount').value||0;
+  const subtotal=cart.reduce((s,i)=>s+(i.price*i.qty),0);
+  const total=subtotal-(subtotal*(discount/100));
+  document.getElementById('pos-total').textContent=peso(total);
+  document.getElementById('pos-cart-items').innerHTML=cart.map(i=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border)">
+      <div style="flex:1;font-size:11px;color:var(--text);line-height:1.3">${i.name}</div>
+      <div style="display:flex;align-items:center;gap:4px">
+        <button onclick="updateCartQty(${i.id},-1)" style="background:rgba(255,71,87,.15);color:var(--red);border:none;border-radius:5px;width:22px;height:22px;cursor:pointer;font-weight:700;font-size:12px">-</button>
+        <span style="font-size:11px;font-weight:700;color:var(--text);min-width:18px;text-align:center">${i.qty}</span>
+        <button onclick="updateCartQty(${i.id},1)" style="background:rgba(46,213,115,.15);color:var(--green);border:none;border-radius:5px;width:22px;height:22px;cursor:pointer;font-weight:700;font-size:12px">+</button>
+      </div>
+      <div style="font-size:11px;font-weight:700;color:var(--accent);min-width:48px;text-align:right">${peso(i.price*i.qty)}</div>
+      <button onclick="removeFromCart(${i.id})" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:14px">×</button>
+    </div>
+  `).join('');
+}
+
+function updateCartTotal(){
+  const discount=+document.getElementById('pos-discount').value||0;
+  const subtotal=cart.reduce((s,i)=>s+(i.price*i.qty),0);
+  const total=subtotal-(subtotal*(discount/100));
+  document.getElementById('pos-total').textContent=peso(total);
+  const cash=+document.getElementById('pos-cash').value||0;
+  const changeEl=document.getElementById('pos-change');
+  if(cash>0){const ch=cash-total;changeEl.textContent=ch>=0?`Sukli: ${peso(ch)}`:'Kulang!';}
+  else changeEl.textContent='';
+}
+
+function updateCartQty(id,delta){
+  const item=cart.find(i=>i.id===id);if(!item)return;
+  const prod=products.find(p=>p.id===id);
+  item.qty+=delta;
+  if(item.qty<=0)cart=cart.filter(i=>i.id!==id);
+  else if(prod&&item.qty>prod.stock){item.qty=prod.stock;toast('Maximum stock na!','var(--red)');}
+  renderCart();
+}
+function removeFromCart(id){cart=cart.filter(i=>i.id!==id);renderCart();}
+function clearCart(){cart=[];renderCart();}
+
+function checkout(){
+  const discount=+document.getElementById('pos-discount').value||0;
+  const subtotal=cart.reduce((s,i)=>s+(i.price*i.qty),0);
+  const total=subtotal-(subtotal*(discount/100));
+  const cash=+document.getElementById('pos-cash').value||0;
+  if(!cash||cash<total){toast('Hindi sapat ang cash!','var(--red)');return;}
+  const ch=cash-total;
+  const profit=cart.reduce((s,i)=>s+(i.price-i.cost)*i.qty,0);
+  // Update stocks
+  cart.forEach(ci=>{const p=products.find(x=>x.id===ci.id);if(p){p.stock-=ci.qty;p.sold+=ci.qty;}});
+  saveProducts();
+  // Update sales
+  const last=sales[sales.length-1];
+  last.sales+=total;last.profit+=profit;last.txn+=1;
+  saveSales();
+  // Show receipt
+  document.getElementById('pos-main').style.display='none';
+  document.getElementById('pos-receipt').style.display='block';
+  document.getElementById('receipt-time').textContent=new Date().toLocaleTimeString()+' • '+settings.storeName;
+  document.getElementById('receipt-items').innerHTML=cart.map(i=>`<div class="receipt-line"><span>${i.name} x${i.qty}</span><span>${peso(i.price*i.qty)}</span></div>`).join('');
+  document.getElementById('r-subtotal').textContent=peso(subtotal);
+  if(discount>0){document.getElementById('r-discount-row').style.display='flex';document.getElementById('r-discount-label').textContent=`Diskwento (${discount}%)`;document.getElementById('r-discount-val').textContent='-'+peso(subtotal-total);}
+  else document.getElementById('r-discount-row').style.display='none';
+  document.getElementById('r-total').textContent=peso(total);
+  document.getElementById('r-cash').textContent=peso(cash);
+  document.getElementById('r-change').textContent=peso(ch);
+  cart=[];
+  updateBadges();
+}
+
+function newTransaction(){
+  document.getElementById('pos-main').style.display='block';
+  document.getElementById('pos-receipt').style.display='none';
+  document.getElementById('pos-discount').value=0;
+  document.getElementById('pos-cash').value='';
+  renderPOS();
+}
+
+// ── INVENTORY ─────────────────────────────
+function renderInventory(){
+  // Summary
+  const totalRetail=products.reduce((s,p)=>s+(p.price*p.stock),0);
+  document.getElementById('inv-summary').innerHTML=`
+    <div class="card" style="padding:10px;text-align:center"><div style="font-size:14px;font-weight:800;color:var(--blue);font-family:var(--font)">${products.length}</div><div style="font-size:8px;color:var(--text-dim)">Products</div></div>
+    <div class="card" style="padding:10px;text-align:center"><div style="font-size:14px;font-weight:800;color:var(--red);font-family:var(--font)">${products.filter(isLow).length}</div><div style="font-size:8px;color:var(--text-dim)">Low Stock</div></div>
+    <div class="card" style="padding:10px;text-align:center"><div style="font-size:12px;font-weight:800;color:var(--accent);font-family:var(--font)">${peso(totalRetail)}</div><div style="font-size:8px;color:var(--text-dim)">Retail Value</div></div>
+  `;
+  // Filters
+  const filters=['All','Low Stock','Expiring','OK'];
+  document.getElementById('inv-filters').innerHTML=filters.map(f=>`<button class="pill ${invFilter===f?'active':''}" onclick="setInvFilter('${f}')" style="color:${f==='Low Stock'?'var(--red)':f==='Expiring'?'var(--purple)':'inherit'}">${f}</button>`).join('');
+  const sorts=['name','price','stock','margin'];
+  document.getElementById('inv-sorts').innerHTML=sorts.map(s=>`<button class="pill ${invSort===s?'active':''}" style="${invSort===s?'background:rgba(30,144,255,.15);color:var(--blue);border-color:rgba(30,144,255,.3)':''}" onclick="setInvSort('${s}')">${s}</button>`).join('');
+  // Filter & sort
+  const search=document.getElementById('inv-search').value.toLowerCase();
+  let items=products.filter(p=>p.name.toLowerCase().includes(search)||p.cat.toLowerCase().includes(search));
+  if(invFilter==='Low Stock')items=items.filter(isLow);
+  else if(invFilter==='Expiring')items=items.filter(isExp);
+  else if(invFilter==='OK')items=items.filter(p=>!isLow(p)&&!isExp(p));
+  if(invSort==='price')items=[...items].sort((a,b)=>b.price-a.price);
+  else if(invSort==='stock')items=[...items].sort((a,b)=>a.stock-b.stock);
+  else if(invSort==='margin')items=[...items].sort((a,b)=>getMargin(b)-getMargin(a));
+  else items=[...items].sort((a,b)=>a.name.localeCompare(b.name));
+  document.getElementById('inv-list').innerHTML=items.map(p=>{
+    const low=isLow(p),exp=isExp(p),margin=getMargin(p);
+    const pct=Math.min(100,(p.stock/Math.max(p.min*2,1))*100);
+    const photoHtml=p.photo
+      ? `<img src="${p.photo}" style="width:100%;height:90px;object-fit:cover;border-radius:10px;margin-bottom:10px;display:block" alt="${p.name}">`
+      : '';
+    return `
+    <div style="background:var(--card);border:1px solid ${low?'rgba(255,71,87,.3)':exp?'rgba(168,85,247,.3)':'var(--border)'};border-radius:16px;padding:14px 16px">
+      ${photoHtml}
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.name}</div>
+          <div style="font-size:9px;color:var(--text-dim);margin-top:2px">${p.cat} • ${p.unit} • Exp: ${p.expiry}${p.barcode?' • ▦ '+p.barcode:''}</div>
+        </div>
+        <div style="display:flex;gap:4px;flex-shrink:0;margin-left:8px">
+          ${low?`<span class="badge" style="background:rgba(255,71,87,.15);color:var(--red);border:1px solid rgba(255,71,87,.3)">LOW</span>`:''}
+          ${exp?`<span class="badge" style="background:rgba(168,85,247,.15);color:var(--purple);border:1px solid rgba(168,85,247,.3)">EXP</span>`:''}
+          <span class="badge" style="background:rgba(30,144,255,.15);color:var(--blue);border:1px solid rgba(30,144,255,.3)">${margin}%</span>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px">
+        <div style="text-align:center"><div style="font-size:13px;font-weight:800;color:${low?'var(--red)':'var(--green)'};font-family:var(--font)">${p.stock}</div><div style="font-size:8px;color:var(--text-dim)">Stock</div></div>
+        <div style="text-align:center"><div style="font-size:13px;font-weight:800;color:var(--text-dim);font-family:var(--font)">${p.min}</div><div style="font-size:8px;color:var(--text-dim)">Min</div></div>
+        <div style="text-align:center"><div style="font-size:13px;font-weight:800;color:var(--accent);font-family:var(--font)">${peso(p.price)}</div><div style="font-size:8px;color:var(--text-dim)">Presyo</div></div>
+        <div style="text-align:center"><div style="font-size:13px;font-weight:800;color:var(--text-mid);font-family:var(--font)">${peso(p.cost)}</div><div style="font-size:8px;color:var(--text-dim)">Gastos</div></div>
+      </div>
+      <div class="prog-track" style="height:4px;margin-bottom:8px"><div class="prog-fill" style="width:${pct}%;height:100%;background:${low?'var(--red)':'var(--green)'}"></div></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button onclick="adjustStock(${p.id},1)" class="btn btn-success btn-sm">+1</button>
+        <button onclick="adjustStock(${p.id},-1)" class="btn btn-danger btn-sm">-1</button>
+        <button onclick="restockProduct(${p.id})" class="btn btn-blue btn-sm" style="flex:1">📦 Restock</button>
+        <button onclick="editProduct(${p.id})" class="btn btn-sm" style="background:rgba(245,166,35,.15);color:var(--accent);border:1px solid rgba(245,166,35,.3)">✏️</button>
+        <button onclick="deleteProduct(${p.id})" class="btn btn-danger btn-sm">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function setInvFilter(f){invFilter=f;renderInventory();}
+function setInvSort(s){invSort=s;renderInventory();}
+
+function toggleAddProduct(){
+  const form=document.getElementById('add-product-form');
+  const btn=document.getElementById('add-prod-btn');
+  if(form.style.display==='none'){form.style.display='block';btn.textContent='✕';}
+  else{form.style.display='none';btn.textContent='+ Dagdag';invEditId=null;clearProductForm();}
+}
+
+// ── BARCODE SCANNER ───────────────────────
+let bcStream=null;
+let bcMode=null;           // 'form' | 'pos'
+let bcFacingMode='environment';
+let bcActive=false;
+let bcNativeReader=null;   // ZXing reader instance
+let bcAnimFrame=null;
+let bcNativeDetector=null; // BarcodeDetector if available
+
+async function openBarcodeScanner(mode){
+  bcMode=mode;
+  bcActive=true;
+
+  // Set UI labels
+  const titles={form:'Scan Barcode ng Produkto', pos:'Scan para Magdagdag sa Cart'};
+  const subs={form:'I-point sa barcode, awtomatikong mafi-fill ang barcode field', pos:'I-point sa barcode ng produkto para idagdag sa cart'};
+  document.getElementById('bc-title').textContent=titles[mode]||'Barcode Scanner';
+  document.getElementById('bc-subtitle').textContent=subs[mode]||'';
+  document.getElementById('bc-status').textContent='Nagbubukas ng camera...';
+  document.getElementById('bc-manual-input').value='';
+  document.getElementById('bc-flash').style.display='none';
+
+  const overlay=document.getElementById('barcode-overlay');
+  overlay.style.display='flex';
+
+  await startBarcodeStream();
+}
+
+async function startBarcodeStream(){
+  stopBarcodeStream(true);
+  try{
+    const constraints={video:{facingMode:{ideal:bcFacingMode},width:{ideal:1920},height:{ideal:1080}}};
+    bcStream=await navigator.mediaDevices.getUserMedia(constraints);
+    const video=document.getElementById('bc-video');
+    video.srcObject=bcStream;
+    await new Promise(r=>{video.onloadedmetadata=r;});
+    video.play();
+    document.getElementById('bc-status').textContent='Handa na! I-point ang camera sa barcode...';
+    startDecoding(video);
+  } catch(e){
+    document.getElementById('bc-status').textContent='Camera error: '+e.message+'. Gamitin ang manual input sa ibaba.';
+  }
+}
+
+function stopBarcodeStream(keepOpen){
+  bcActive=false;
+  if(bcAnimFrame){cancelAnimationFrame(bcAnimFrame);bcAnimFrame=null;}
+  if(bcNativeReader){try{bcNativeReader.reset();}catch(e){} bcNativeReader=null;}
+  if(bcStream){bcStream.getTracks().forEach(t=>t.stop());bcStream=null;}
+  if(!keepOpen) document.getElementById('bc-video').srcObject=null;
+}
+
+function stopBarcodeScanner(){
+  stopBarcodeStream();
+  document.getElementById('barcode-overlay').style.display='none';
+  bcMode=null;
+}
+
+function flipBarcodeCamera(){
+  bcFacingMode=bcFacingMode==='environment'?'user':'environment';
+  bcActive=true;
+  startBarcodeStream();
+}
+
+async function startDecoding(video){
+  bcActive=true;
+
+  // ── Try native BarcodeDetector first (Chrome Android, newer browsers)
+  if('BarcodeDetector' in window){
+    try{
+      bcNativeDetector=new BarcodeDetector({formats:['ean_13','ean_8','code_128','code_39','qr_code','upc_a','upc_e','itf','codabar']});
+      document.getElementById('bc-status').textContent='Scanner ready (Native) — I-point sa barcode!';
+      detectNative(video);
+      return;
+    } catch(e){}
+  }
+
+  // ── Fallback: ZXing-js
+  if(typeof ZXing !== 'undefined'){
+    try{
+      const hints=new Map();
+      const formats=[
+        ZXing.BarcodeFormat.EAN_13, ZXing.BarcodeFormat.EAN_8,
+        ZXing.BarcodeFormat.CODE_128, ZXing.BarcodeFormat.CODE_39,
+        ZXing.BarcodeFormat.QR_CODE, ZXing.BarcodeFormat.UPC_A,
+        ZXing.BarcodeFormat.UPC_E, ZXing.BarcodeFormat.ITF,
+        ZXing.BarcodeFormat.CODABAR,
+      ];
+      hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, formats);
+      bcNativeReader=new ZXing.BrowserMultiFormatReader(hints);
+      document.getElementById('bc-status').textContent='Scanner ready (ZXing) — I-point sa barcode!';
+      bcNativeReader.decodeFromVideoElement(video, (result,err)=>{
+        if(!bcActive) return;
+        if(result) onBarcodeDetected(result.getText());
+      });
+      return;
+    } catch(e){
+      document.getElementById('bc-status').textContent='ZXing error. Gamitin ang manual input.';
+    }
+  } else {
+    document.getElementById('bc-status').textContent='Library loading... o gamitin ang manual input sa ibaba.';
+  }
+}
+
+function detectNative(video){
+  if(!bcActive||!bcNativeDetector)return;
+  bcNativeDetector.detect(video)
+    .then(barcodes=>{
+      if(!bcActive)return;
+      if(barcodes.length>0){
+        onBarcodeDetected(barcodes[0].rawValue);
+      } else {
+        bcAnimFrame=requestAnimationFrame(()=>detectNative(video));
+      }
+    })
+    .catch(()=>{
+      if(bcActive) bcAnimFrame=requestAnimationFrame(()=>detectNative(video));
+    });
+}
+
+function onBarcodeDetected(code){
+  if(!code||!bcActive)return;
+  bcActive=false; // stop further detection
+
+  // Flash green
+  const flash=document.getElementById('bc-flash');
+  flash.style.display='block';
+  setTimeout(()=>flash.style.display='none',400);
+
+  // Vibrate if supported
+  if(navigator.vibrate) navigator.vibrate(80);
+
+  document.getElementById('bc-status').textContent='✅ Na-scan: '+code;
+
+  setTimeout(()=>{
+    handleScannedBarcode(code);
+  }, 350);
+}
+
+function onBarcodeManual(){
+  const code=document.getElementById('bc-manual-input').value.trim();
+  if(!code){toast('Maglagay ng barcode number!','var(--red)');return;}
+  onBarcodeDetected(code);
+}
+
+function handleScannedBarcode(code){
+  if(bcMode==='form'){
+    // Fill barcode field in product form
+    const input=document.getElementById('pf-barcode');
+    if(input){input.value=code;}
+    stopBarcodeScanner();
+    toast('Barcode na-scan: '+code,'var(--accent)');
+
+  } else if(bcMode==='pos'){
+    // Find product by barcode and add to cart
+    const found=products.find(p=>p.barcode===code);
+    stopBarcodeScanner();
+    if(found){
+      addToCart(found.id);
+      toast('Na-scan: '+found.name+' — Naidagdag sa cart!','var(--green)');
+    } else {
+      // Not found — ask if they want to add it as new product
+      toast('Barcode '+code+' — hindi pa registered. I-add sa Inventory muna.','var(--red)');
+      // Optionally open add form pre-filled with barcode
+      if(confirm('Barcode "'+code+'" ay hindi pa nakalista.\nGusto mo bang magdagdag ng bagong produkto gamit ang barcode na ito?')){
+        switchTab('inventory');
+        setTimeout(()=>{
+          document.getElementById('add-product-form').style.display='block';
+          document.getElementById('add-prod-btn').textContent='✕';
+          document.getElementById('pf-barcode').value=code;
+          document.getElementById('pf-name').focus();
+          document.getElementById('add-product-form').scrollIntoView({behavior:'smooth'});
+        },300);
+      }
+    }
+  }
+}
+
+// ── CAMERA / PHOTO ────────────────────────
+let currentStream=null;
+let currentFacingMode='environment'; // start with back camera
+let currentPhotoData=null; // base64 string
+
+function openCamera(){
+  stopCamera(); // stop any existing stream
+  currentFacingMode='environment';
+  startCameraStream();
+}
+
+function startCameraStream(){
+  const constraints={video:{facingMode:currentFacingMode,width:{ideal:1280},height:{ideal:720}}};
+  navigator.mediaDevices.getUserMedia(constraints)
+    .then(stream=>{
+      currentStream=stream;
+      const video=document.getElementById('pf-video');
+      video.srcObject=stream;
+      document.getElementById('pf-camera-wrap').style.display='block';
+      document.getElementById('pf-photo-btns').style.display='none';
+      if(currentPhotoData) document.getElementById('pf-photo-preview').style.display='none';
+    })
+    .catch(err=>{
+      // Camera denied or not available — show file picker instead
+      toast('Camera hindi available. Gamitin ang Gallery.','var(--red)');
+      document.getElementById('pf-file-input').click();
+    });
+}
+
+function switchCamera(){
+  currentFacingMode=currentFacingMode==='environment'?'user':'environment';
+  stopCamera(true); // stop but keep UI open
+  startCameraStream();
+}
+
+function stopCamera(keepOpen){
+  if(currentStream){
+    currentStream.getTracks().forEach(t=>t.stop());
+    currentStream=null;
+  }
+  if(!keepOpen){
+    document.getElementById('pf-camera-wrap').style.display='none';
+    document.getElementById('pf-photo-btns').style.display='flex';
+    if(currentPhotoData) document.getElementById('pf-photo-preview').style.display='block';
+  }
+}
+
+function capturePhoto(){
+  const video=document.getElementById('pf-video');
+  const canvas=document.getElementById('pf-canvas');
+  const W=video.videoWidth||640;
+  const H=video.videoHeight||480;
+  canvas.width=W;
+  canvas.height=H;
+  const ctx=canvas.getContext('2d');
+  ctx.drawImage(video,0,0,W,H);
+  // Compress to max 800px wide, JPEG quality 0.75 to keep localStorage size manageable
+  const maxW=800;
+  const scale=W>maxW?maxW/W:1;
+  const outCanvas=document.createElement('canvas');
+  outCanvas.width=W*scale;
+  outCanvas.height=H*scale;
+  outCanvas.getContext('2d').drawImage(canvas,0,0,outCanvas.width,outCanvas.height);
+  currentPhotoData=outCanvas.toDataURL('image/jpeg',0.75);
+  showPhotoPreview(currentPhotoData);
+  stopCamera();
+  toast('Na-capture ang photo!','var(--green)');
+}
+
+function handleFileUpload(e){
+  const file=e.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    // Compress via canvas
+    const img=new Image();
+    img.onload=()=>{
+      const maxW=800;
+      const scale=img.width>maxW?maxW/img.width:1;
+      const canvas=document.createElement('canvas');
+      canvas.width=img.width*scale;
+      canvas.height=img.height*scale;
+      canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
+      currentPhotoData=canvas.toDataURL('image/jpeg',0.75);
+      showPhotoPreview(currentPhotoData);
+      toast('Na-upload ang photo!','var(--green)');
+    };
+    img.src=ev.target.result;
+  };
+  reader.readAsDataURL(file);
+  // Reset file input so same file can be re-selected
+  e.target.value='';
+}
+
+function showPhotoPreview(src){
+  document.getElementById('pf-photo-img').src=src;
+  document.getElementById('pf-photo-preview').style.display='block';
+  document.getElementById('pf-photo-btns').style.display='flex';
+  document.getElementById('pf-camera-wrap').style.display='none';
+}
+
+function clearPhoto(){
+  currentPhotoData=null;
+  document.getElementById('pf-photo-preview').style.display='none';
+  document.getElementById('pf-photo-img').src='';
+  document.getElementById('pf-photo-btns').style.display='flex';
+}
+
+// ── PRODUCT FORM ──────────────────────────
+function clearProductForm(){
+  ['pf-name','pf-cat','pf-unit','pf-stock','pf-min','pf-price','pf-cost','pf-expiry','pf-barcode'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.value='';
+  });
+  clearPhoto();
+  stopCamera();
+}
+
+function cancelProductForm(){
+  document.getElementById('add-product-form').style.display='none';
+  document.getElementById('add-prod-btn').textContent='+ Dagdag';
+  invEditId=null;
+  clearProductForm();
+}
+
+function saveProduct(){
+  const get=id=>document.getElementById(id)?.value||'';
+  const name=get('pf-name');
+  if(!name){toast('Maglagay ng pangalan!','var(--red)');return;}
+  const item={
+    name,
+    cat:get('pf-cat'),
+    unit:get('pf-unit')||'sachet',
+    stock:+get('pf-stock')||0,
+    min:+get('pf-min')||0,
+    price:+get('pf-price')||0,
+    cost:+get('pf-cost')||0,
+    expiry:get('pf-expiry'),
+    barcode:get('pf-barcode')||'',
+    sold:0,
+    photo:currentPhotoData||null,
+  };
+  if(invEditId){
+    const idx=products.findIndex(p=>p.id===invEditId);
+    if(idx>-1){
+      // Keep old photo if no new one was taken
+      const oldPhoto=products[idx].photo;
+      products[idx]={...products[idx],...item,photo:currentPhotoData||oldPhoto};
+    }
+    toast('Na-update!','var(--green)');
+    invEditId=null;
+  } else {
+    products.push({...item,id:genId()});
+    toast('Naidagdag!','var(--accent)');
+  }
+  stopCamera();
+  saveProducts();
+  cancelProductForm();
+  renderInventory();
+  updateBadges();
+}
+
+function editProduct(id){
+  const p=products.find(x=>x.id===id);if(!p)return;
+  invEditId=id;
+  document.getElementById('pf-name').value=p.name||'';
+  document.getElementById('pf-cat').value=p.cat||'';
+  document.getElementById('pf-unit').value=p.unit||'';
+  document.getElementById('pf-stock').value=p.stock||'';
+  document.getElementById('pf-min').value=p.min||'';
+  document.getElementById('pf-price').value=p.price||'';
+  document.getElementById('pf-cost').value=p.cost||'';
+  document.getElementById('pf-expiry').value=p.expiry||'';
+  document.getElementById('pf-barcode').value=p.barcode||'';
+  // Load existing photo if any
+  currentPhotoData=p.photo||null;
+  if(p.photo){
+    showPhotoPreview(p.photo);
+  } else {
+    clearPhoto();
+  }
+  document.getElementById('add-product-form').style.display='block';
+  document.getElementById('add-prod-btn').textContent='✕';
+  document.getElementById('add-form-title').textContent='✏️ I-edit ang Produkto';
+  document.getElementById('add-product-form').scrollIntoView({behavior:'smooth'});
+}
+
+function deleteProduct(id){if(!confirm('Tanggalin?'))return;products=products.filter(p=>p.id!==id);saveProducts();renderInventory();updateBadges();}
+function adjustStock(id,delta){const p=products.find(x=>x.id===id);if(p){p.stock=Math.max(0,p.stock+delta);saveProducts();renderInventory();updateBadges();}}
+function restockProduct(id){const p=products.find(x=>x.id===id);if(p){p.stock=p.min*2+10;saveProducts();renderInventory();updateBadges();toast('Nai-restock!','var(--blue)');}}
+
+// ── UTANG ─────────────────────────────────
+function renderUtangList(){
+  const totalUtang=utang.reduce((s,u)=>s+getBalance(u),0);
+  document.getElementById('utang-total-display').textContent=peso(totalUtang);
+  document.getElementById('utang-summary').textContent=`${utang.filter(u=>getBalance(u)>0).length} may utang • ${utang.filter(u=>getBalance(u)<=0).length} bayad na`;
+  const filters=['All','May Utang','Bayad Na'];
+  document.getElementById('utang-filters').innerHTML=filters.map(f=>`<button class="pill ${utangFilter===f?'active':''}" onclick="setUtangFilter('${f}')" style="${f==='May Utang'&&utangFilter===f?'background:rgba(255,71,87,.15);color:var(--red);border-color:rgba(255,71,87,.3)':f==='Bayad Na'&&utangFilter===f?'background:rgba(46,213,115,.15);color:var(--green);border-color:rgba(46,213,115,.3)':''}">${f}</button>`).join('');
+  const search=document.getElementById('utang-search').value.toLowerCase();
+  let shown=utang.filter(u=>u.name.toLowerCase().includes(search));
+  if(utangFilter==='May Utang')shown=shown.filter(u=>getBalance(u)>0);
+  if(utangFilter==='Bayad Na')shown=shown.filter(u=>getBalance(u)<=0);
+  document.getElementById('utang-list').innerHTML=shown.map((u,idx)=>{
+    const bal=getBalance(u),pct=Math.min(100,(bal/u.limit)*100);
+    const sc=pct>80?'var(--red)':pct>50?'var(--purple)':'var(--green)';
+    return `
+    <div onclick="openUtangDetail(${u.id})" style="background:var(--card);border:1px solid ${bal>=u.limit?'rgba(255,71,87,.5)':'var(--border)'};border-radius:16px;padding:14px 16px;cursor:pointer">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:42px;height:42px;border-radius:50%;background:${u.color};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;flex-shrink:0">${u.avatar}</div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-size:13px;font-weight:700;color:var(--text)">${u.name}</div>
+            <div style="font-size:16px;font-weight:800;color:${bal<=0?'var(--green)':'var(--red)'};font-family:var(--font)">${bal<=0?'✓ Bayad':peso(bal)}</div>
+          </div>
+          <div style="margin-top:6px" class="prog-track" style="height:4px"><div class="prog-fill" style="width:${pct}%;height:4px;background:${sc}"></div></div>
+          <div style="font-size:9px;color:var(--text-dim);margin-top:3px">${u.items.length} txn • Limit ${peso(u.limit)}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function setUtangFilter(f){utangFilter=f;renderUtangList();}
+
+function addUtangPerson(){
+  const name=document.getElementById('new-utang-name').value;
+  if(!name){toast('Maglagay ng pangalan!','var(--red)');return;}
+  const phone=document.getElementById('new-utang-phone').value;
+  const limit=+document.getElementById('new-utang-limit').value||settings.defaultUtangLimit||200;
+  utang.push({id:genId(),name,avatar:initials(name),color:AVATAR_COLORS[utang.length%AVATAR_COLORS.length],items:[],paid:0,limit,phone});
+  saveUtang();renderUtangList();updateBadges();
+  document.getElementById('new-utang-name').value='';document.getElementById('new-utang-phone').value='';
+  toast('Naidagdag!','var(--accent)');
+}
+
+function openUtangDetail(id){
+  selectedUtangId=id;
+  document.getElementById('utang-main').style.display='none';
+  document.getElementById('utang-detail').style.display='flex';
+  renderUtangDetail();
+}
+
+function backToUtangList(){
+  document.getElementById('utang-main').style.display='block';
+  document.getElementById('utang-detail').style.display='none';
+  renderUtangList();updateBadges();
+}
+
+function renderUtangDetail(){
+  const u=utang.find(x=>x.id===selectedUtangId);if(!u){backToUtangList();return;}
+  const bal=getBalance(u),pct=Math.min(100,(bal/u.limit)*100);
+  const sc=pct>80?'var(--red)':pct>50?'var(--purple)':'var(--green)';
+  document.getElementById('utang-detail-content').innerHTML=`
+    <div class="card" style="border:1px solid ${u.color}44">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px">
+        <div style="width:52px;height:52px;border-radius:50%;background:${u.color};display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;color:#fff;flex-shrink:0">${u.avatar}</div>
+        <div style="flex:1">
+          <div style="font-size:18px;font-weight:800;color:var(--text);font-family:var(--font)">${u.name}</div>
+          ${u.phone?`<div style="font-size:10px;color:var(--text-dim)">📱 ${u.phone}</div>`:''}
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:26px;font-weight:800;color:${bal>0?'var(--red)':'var(--green)'};font-family:var(--font)">${peso(bal)}</div>
+          <div style="font-size:9px;color:var(--text-dim)">balance</div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--text-dim);margin-bottom:4px"><span>Credit used</span><span style="color:${sc}">${Math.round(pct)}% of ${peso(u.limit)}</span></div>
+      <div class="prog-track" style="height:8px;margin-bottom:16px"><div class="prog-fill" style="width:${pct}%;height:100%;background:${sc}"></div></div>
+    </div>
+    <!-- Pay -->
+    <div class="card card-glow-green">
+      <div style="font-size:11px;font-weight:700;color:var(--green);margin-bottom:10px">💰 I-record ang Bayad</div>
+      <div style="display:flex;gap:8px">
+        <input id="pay-amt-input" class="inp inp-sm" type="number" placeholder="${sym()} Halaga" style="flex:1">
+        <button class="btn btn-success btn-sm" onclick="recordPayment(${u.id})">Bayad ✓</button>
+      </div>
+    </div>
+    <!-- Add Debt -->
+    <div class="card card-glow-red">
+      <div style="font-size:11px;font-weight:700;color:var(--red);margin-bottom:10px">➕ Dagdag na Utang</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <input id="debt-desc-input" class="inp inp-sm" placeholder="Ano ang binili?">
+        <div style="display:flex;gap:8px">
+          <input id="debt-amt-input" class="inp inp-sm" type="number" placeholder="${sym()} Halaga" style="flex:1">
+          <button class="btn btn-danger btn-sm" onclick="addDebt(${u.id})">I-add</button>
+        </div>
+      </div>
+    </div>
+    <!-- History -->
+    <div class="card">
+      <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:12px">📜 Kasaysayan</div>
+      ${u.items.length===0?`<div style="font-size:11px;color:var(--text-dim);text-align:center;padding:16px">Wala pang utang. 😊</div>`:''}
+      ${[...u.items].reverse().map(item=>`
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+          <div><div style="font-size:11px;color:var(--text);font-weight:600">${item.desc}</div><div style="font-size:9px;color:var(--text-dim)">${item.date}</div></div>
+          <div style="font-size:13px;font-weight:800;color:var(--red);font-family:var(--font)">+${peso(item.amount)}</div>
+        </div>
+      `).join('')}
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-top:1px solid var(--border)"><span style="font-size:11px;color:var(--green)">Total Bayad</span><span style="font-size:12px;font-weight:800;color:var(--green)">-${peso(u.paid)}</span></div>
+      <div style="display:flex;justify-content:space-between;padding-top:6px"><span style="font-size:12px;font-weight:700;color:var(--text)">BALANCE</span><span style="font-size:16px;font-weight:800;color:${bal>0?'var(--red)':'var(--green)'};font-family:var(--font)">${peso(bal)}</span></div>
+    </div>
+    <button onclick="deleteUtangPerson(${u.id})" class="btn btn-danger btn-full">🗑️ Tanggalin ang Account</button>
+  `;
+}
+
+function recordPayment(id){
+  const amt=+document.getElementById('pay-amt-input').value;if(!amt)return;
+  const u=utang.find(x=>x.id===id);if(u){u.paid+=amt;}
+  saveUtang();renderUtangDetail();toast('Nai-record ang bayad!','var(--green)');
+}
+
+function addDebt(id){
+  const desc=document.getElementById('debt-desc-input').value;
+  const amt=+document.getElementById('debt-amt-input').value;
+  if(!desc||!amt)return;
+  const u=utang.find(x=>x.id===id);
+  if(u){u.items.push({desc,amount:amt,date:new Date().toLocaleDateString('en-PH',{month:'short',day:'numeric'})});}
+  saveUtang();renderUtangDetail();toast('Naidagdag ang utang!','var(--red)');
+}
+
+function deleteUtangPerson(id){
+  if(!confirm('Tanggalin ang account na ito?'))return;
+  utang=utang.filter(u=>u.id!==id);saveUtang();backToUtangList();
+}
+
+// ── SALES ─────────────────────────────────
+function renderSales(){
+  const totalSales=sales.reduce((s,d)=>s+d.sales,0);
+  const totalProfit=sales.reduce((s,d)=>s+d.profit,0);
+  const totalTxn=sales.reduce((s,d)=>s+d.txn,0);
+  const avgOrder=totalTxn>0?Math.round(totalSales/totalTxn):0;
+  const margin=totalSales>0?Math.round((totalProfit/totalSales)*100):0;
+  const best=sales.reduce((a,b)=>b.sales>a.sales?b:a,{date:'—',sales:0});
+  document.getElementById('sales-total').textContent=peso(totalSales);
+  document.getElementById('profit-total').textContent=peso(totalProfit);
+  document.getElementById('txn-total').textContent=totalTxn;
+  document.getElementById('avg-order').textContent=peso(avgOrder);
+  document.getElementById('profit-margin').textContent=margin+'%';
+  document.getElementById('profit-margin').style.color=margin>25?'var(--green)':'var(--purple)';
+  document.getElementById('best-day').textContent=best.date;
+  document.getElementById('best-day-amt').textContent=peso(best.sales);
+  renderBarChart('sales-bar-chart',sales);
+  // Daily breakdown
+  const maxS=best.sales||1;
+  document.getElementById('sales-breakdown').innerHTML=sales.map(d=>`
+    <div style="display:flex;align-items:center;gap:8px">
+      <div style="font-size:10px;color:var(--text-mid);width:40px;flex-shrink:0">${d.date}</div>
+      <div style="flex:1;background:var(--border);border-radius:99px;height:5px;position:relative;overflow:hidden">
+        <div style="position:absolute;top:0;left:0;width:${(d.sales/maxS)*100}%;height:100%;background:rgba(30,144,255,.6)"></div>
+        <div style="position:absolute;top:0;left:0;width:${(d.profit/maxS)*100}%;height:100%;background:var(--accent)"></div>
+      </div>
+      <div style="font-size:10px;color:var(--text);font-weight:700;width:50px;text-align:right;flex-shrink:0">${peso(d.sales)}</div>
+    </div>
+  `).join('');
+  // Top products — FIXED: no overflow, proper width containment
+  const sorted=[...products].sort((a,b)=>b.sold-a.sold).slice(0,6);
+  const maxRev=sorted[0]?(sorted[0].price*sorted[0].sold):1;
+  const colors=['var(--accent)','var(--blue)','var(--green)','var(--purple)','var(--red)','var(--purple)'];
+  document.getElementById('top-products-list').innerHTML=sorted.map((p,i)=>{
+    const rev=p.price*p.sold;
+    const barPct=Math.min(100,(rev/maxRev)*100);
+    return `
+    <div style="width:100%;min-width:0">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;gap:8px">
+        <div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1">
+          <div style="width:20px;height:20px;border-radius:50%;background:${colors[i]}22;color:${colors[i]};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0">${i+1}</div>
+          <div style="font-size:11px;color:var(--text);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0">${p.name}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-size:11px;color:${colors[i]};font-weight:700">${peso(rev)}</div>
+          <div style="font-size:9px;color:var(--text-dim)">${p.sold} pcs</div>
+        </div>
+      </div>
+      <div class="prog-track" style="height:3px"><div class="prog-fill" style="width:${barPct}%;height:100%;background:${colors[i]}"></div></div>
+    </div>`;
+  }).join('');
+}
+
+// ── SERVICES ──────────────────────────────
+function initServiceNav(){
+  const sections=[['eload','📱 E-Load'],['bills','💳 Bills'],['cash','💸 GCash/Maya']];
+  document.getElementById('service-nav').innerHTML=sections.map(([id,label])=>`
+    <button class="pill ${serviceSection===id?'active':''}" onclick="switchService('${id}')">${label}</button>
+  `).join('');
+}
+
+function switchService(sec){
+  serviceSection=sec;
+  ['eload','bills','cash'].forEach(s=>{document.getElementById('svc-'+s).style.display=s===sec?'flex':'none';});
+  initServiceNav();
+  if(sec==='eload')renderEloadSection();
+  if(sec==='bills')renderBillsSection();
+  if(sec==='cash')renderCashSection();
+}
+
+function renderServices(){
+  initServiceNav();
+  switchService(serviceSection);
+  updateServiceTotals();
+}
+
+function updateServiceTotals(){
+  const loadComm=eloadTxns.reduce((s,t)=>s+t.commission,0);
+  const billsComm=[...billsTxns,...cashTxns].reduce((s,t)=>s+(t.commission||0),0);
+  document.getElementById('eload-comm-total').textContent=sym()+loadComm.toFixed(2);
+  document.getElementById('bills-comm-total').textContent=sym()+billsComm.toFixed(2);
+}
+
+// E-LOAD
+function renderEloadSection(){
+  selectedEloadProvider=selectedEloadProvider||eloadProviders[0];
+  document.getElementById('eload-network-pills').innerHTML=eloadProviders.map(p=>`
+    <button class="pill ${selectedEloadProvider?.id===p.id?'active':''}" onclick="selectEloadProvider(${p.id})" style="color:${selectedEloadProvider?.id===p.id?p.color:'inherit'};${selectedEloadProvider?.id===p.id?`background:${p.color}22;border-color:${p.color}44`:''}">${p.name}</button>
+  `).join('');
+  updateEloadAmounts();
+  renderEloadTxns();
+}
+
+function selectEloadProvider(id){
+  selectedEloadProvider=eloadProviders.find(p=>p.id===id);
+  renderEloadSection();
+}
+
+function updateEloadAmounts(){
+  const amts=[30,50,100,200,300,500];
+  const curAmt=document.getElementById('eload-custom-amt')?.value||'';
+  document.getElementById('eload-amounts').innerHTML=amts.map(a=>`
+    <button class="btn btn-sm" onclick="document.getElementById('eload-custom-amt').value='${a}';calcEloadComm()" style="flex:1;min-width:46px;padding:7px 4px;font-size:11px;background:var(--surface);color:var(--text-mid);border:1px solid var(--border)">${sym()}${a}</button>
+  `).join('');
+}
+
+function calcEloadComm(){
+  const amt=+document.getElementById('eload-custom-amt').value;
+  const p=selectedEloadProvider;if(!p||!amt){document.getElementById('eload-comm-preview').style.display='none';return;}
+  const comm=p.feeType==='percent'?amt*(p.feeValue/100):p.feeValue;
+  document.getElementById('eload-comm-preview').textContent=`Komisyon: ${sym()}${comm.toFixed(2)} (${p.feeType==='percent'?p.feeValue+'%':sym()+p.feeValue+' fixed'})`;
+  document.getElementById('eload-comm-preview').style.display='block';
+}
+
+function sendEload(){
+  const phone=document.getElementById('eload-phone').value;
+  const amt=+document.getElementById('eload-custom-amt').value;
+  const p=selectedEloadProvider;
+  if(!phone||!amt||!p){toast('Fill up ang lahat ng fields!','var(--red)');return;}
+  const comm=p.feeType==='percent'?+(amt*(p.feeValue/100)).toFixed(2):p.feeValue;
+  const txn={id:genId(),network:p.name,color:p.color,phone,amount:amt,commission:comm,time:new Date().toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit'}),date:new Date().toLocaleDateString('en-PH',{month:'short',day:'numeric'})};
+  eloadTxns.unshift(txn);save('__eload_txns',eloadTxns);
+  document.getElementById('eload-phone').value='';document.getElementById('eload-custom-amt').value='';
+  document.getElementById('eload-comm-preview').style.display='none';
+  toast(`Load sent! Komisyon: ${sym()}${comm.toFixed(2)}`,'var(--green)');
+  renderEloadTxns();updateServiceTotals();
+}
+
+function renderEloadTxns(){
+  const el=document.getElementById('eload-txn-list');
+  if(!eloadTxns.length){el.innerHTML='<div style="font-size:11px;color:var(--text-dim);text-align:center;padding:16px">Wala pang transactions.</div>';return;}
+  el.innerHTML=eloadTxns.slice(0,10).map(t=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+      <div>
+        <div style="font-size:11px;font-weight:600;color:var(--text)">${t.network} • ${t.phone}</div>
+        <div style="font-size:9px;color:var(--text-dim)">${t.date} ${t.time}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:12px;color:var(--text);font-weight:700">${sym()}${t.amount}</div>
+        <div style="font-size:9px;color:var(--green)">+${sym()}${t.commission.toFixed(2)}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// BILLS
+function renderBillsSection(){
+  document.getElementById('bills-grid').innerHTML=billsProviders.map(b=>`
+    <div onclick="openPayBill(${b.id})" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;cursor:pointer;text-align:center">
+      <div style="font-size:22px;margin-bottom:4px">${b.icon}</div>
+      <div style="font-size:11px;font-weight:700;color:var(--text)">${b.name}</div>
+      <div style="font-size:9px;color:var(--green);margin-top:2px">${b.feeType==='fixed'?`+${sym()}${b.feeValue}`:`+${b.feeValue}%`}</div>
+    </div>
+  `).join('');
+  renderBillsTxns();
+}
+
+function openPayBill(id){
+  const b=billsProviders.find(x=>x.id===id);if(!b)return;
+  openModal(`
+    <div style="font-size:18px;text-align:center;margin-bottom:4px">${b.icon}</div>
+    <div style="font-size:16px;font-weight:800;color:var(--text);font-family:var(--font);text-align:center;margin-bottom:16px">${b.name} Payment</div>
+    <div class="form-row"><div class="form-label">Pangalan ng Customer</div><input id="bill-cust" class="inp inp-sm" placeholder="Customer name"></div>
+    <div class="form-row"><div class="form-label">Account No. / Reference</div><input id="bill-acct" class="inp inp-sm" placeholder="Account / reference number"></div>
+    <div class="form-row"><div class="form-label">Amount</div><input id="bill-amount" class="inp inp-sm" type="number" placeholder="${sym()} Amount"></div>
+    <div style="background:rgba(46,213,115,.08);border-radius:8px;padding:10px;margin:12px 0;font-size:11px;color:var(--green)">
+      Komisyon: ${b.feeType==='fixed'?sym()+b.feeValue:b.feeValue+'% ng amount'}
+    </div>
+    <button class="btn btn-primary btn-full" onclick="processBill(${b.id})">✓ I-process</button>
+  `);
+}
+
+function processBill(id){
+  const b=billsProviders.find(x=>x.id===id);if(!b)return;
+  const cust=document.getElementById('bill-cust')?.value||'';
+  const acct=document.getElementById('bill-acct')?.value||'';
+  const amt=+document.getElementById('bill-amount')?.value||0;
+  const comm=b.feeType==='fixed'?b.feeValue:+(amt*(b.feeValue/100)).toFixed(2);
+  const txn={id:genId(),billName:b.name,icon:b.icon,customer:cust,account:acct,amount:amt,commission:comm,time:new Date().toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit'}),date:new Date().toLocaleDateString('en-PH',{month:'short',day:'numeric'})};
+  billsTxns.unshift(txn);save('__bills_txns',billsTxns);
+  closeModal('force');toast(`${b.name} processed! +${sym()}${comm}`,'var(--purple)');
+  renderBillsTxns();updateServiceTotals();
+}
+
+function renderBillsTxns(){
+  const el=document.getElementById('bills-txn-list');
+  if(!billsTxns.length){el.innerHTML='<div style="font-size:11px;color:var(--text-dim);text-align:center;padding:16px">Wala pang transactions.</div>';return;}
+  el.innerHTML=billsTxns.slice(0,10).map(t=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+      <div>
+        <div style="font-size:11px;font-weight:600;color:var(--text)">${t.icon} ${t.billName}${t.customer?' • '+t.customer:''}</div>
+        <div style="font-size:9px;color:var(--text-dim)">${t.date} ${t.time}${t.account?' • Ref: '+t.account:''}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:12px;color:var(--text);font-weight:700">${t.amount>0?sym()+t.amount:''}</div>
+        <div style="font-size:9px;color:var(--green)">+${sym()}${t.commission}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// GCASH/MAYA CASH-IN/OUT
+function renderCashSection(){
+  selectedCashWallet=selectedCashWallet||cashWallets[0];
+  document.getElementById('cash-wallet-pills').innerHTML=cashWallets.map(w=>`
+    <button class="pill ${selectedCashWallet?.id===w.id?'active':''}" onclick="selectCashWallet(${w.id})" style="${selectedCashWallet?.id===w.id?`background:${w.color}22;color:${w.color};border-color:${w.color}44`:''}">${w.emoji} ${w.name}</button>
+  `).join('');
+  setCashType(cashType);
+}
+
+function selectCashWallet(id){selectedCashWallet=cashWallets.find(w=>w.id===id);renderCashSection();}
+function setCashType(type){
+  cashType=type;
+  const inBtn=document.getElementById('cash-type-in');
+  const outBtn=document.getElementById('cash-type-out');
+  if(type==='cashin'){inBtn.className='btn btn-success';outBtn.className='btn btn-ghost';}
+  else{inBtn.className='btn btn-ghost';outBtn.className='btn btn-danger';}
+  // Show bank ref for cashout (bank to gcash)
+  document.getElementById('cash-ref-bank-row').style.display=type==='cashout'?'block':'none';
+  calcCashFee();
+}
+
+function calcCashFee(){
+  const amt=+document.getElementById('cash-amount').value;
+  const w=selectedCashWallet;
+  const preview=document.getElementById('cash-fee-preview');
+  if(!w||!amt){preview.style.display='none';return;}
+  // Find matching range
+  const range=w.feeRanges.find(r=>amt>=r.min&&amt<=r.max);
+  if(!range){preview.style.display='none';return;}
+  const fee=range.feeType==='fixed'?range.feeValue:+(amt*(range.feeValue/100)).toFixed(2);
+  preview.style.display='block';
+  preview.textContent=`Service Fee: ${sym()}${fee} (${range.feeType==='fixed'?`${sym()}${range.feeValue} fixed`:`${range.feeValue}% of amount`}) • ${cashType==='cashin'?'Cash-In':'Cash-Out'}`;
+}
+
+function processCash(){
+  const amt=+document.getElementById('cash-amount').value;
+  const w=selectedCashWallet;
+  if(!amt||!w){toast('Maglagay ng amount!','var(--red)');return;}
+  const refSender=document.getElementById('cash-ref-sender').value;
+  const refBank=document.getElementById('cash-ref-bank').value;
+  const customer=document.getElementById('cash-customer').value;
+  const notes=document.getElementById('cash-notes').value;
+  const range=w.feeRanges.find(r=>amt>=r.min&&amt<=r.max);
+  const fee=range?(range.feeType==='fixed'?range.feeValue:+(amt*(range.feeValue/100)).toFixed(2)):0;
+  const txn={id:genId(),wallet:w.name,emoji:w.emoji,color:w.color,type:cashType,amount:amt,fee,refSender,refBank,customer,notes,time:new Date().toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit'}),date:new Date().toLocaleDateString('en-PH',{month:'short',day:'numeric'})};
+  cashTxns.unshift(txn);save('__cash_txns',cashTxns);
+  // Clear
+  ['cash-amount','cash-ref-sender','cash-ref-bank','cash-customer','cash-notes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('cash-fee-preview').style.display='none';
+  toast(`${w.name} ${cashType==='cashin'?'Cash-In':'Cash-Out'} processed! Fee: ${sym()}${fee}`,'var(--green)');
+  renderCashTxns();updateServiceTotals();
+}
+
+function renderCashTxns(){
+  const el=document.getElementById('cash-txn-list');
+  if(!cashTxns.length){el.innerHTML='<div style="font-size:11px;color:var(--text-dim);text-align:center;padding:16px">Wala pang transactions.</div>';return;}
+  el.innerHTML=cashTxns.slice(0,10).map(t=>`
+    <div style="padding:10px 0;border-bottom:1px solid var(--border)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--text)">${t.emoji} ${t.wallet} • ${t.type==='cashin'?'Cash-In':'Cash-Out'}</div>
+          <div style="font-size:9px;color:var(--text-dim)">${t.date} ${t.time}${t.customer?' • '+t.customer:''}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:12px;font-weight:700;color:var(--text)">${sym()}${t.amount}</div>
+          <div style="font-size:9px;color:var(--green)">Fee: +${sym()}${t.fee}</div>
+        </div>
+      </div>
+      ${t.refSender?`<div style="font-size:9px;color:var(--text-dim)">Ref (Sender): <span style="color:var(--text-mid)">${t.refSender}</span></div>`:''}
+      ${t.refBank?`<div style="font-size:9px;color:var(--text-dim)">Ref (Bank): <span style="color:var(--text-mid)">${t.refBank}</span></div>`:''}
+      ${t.notes?`<div style="font-size:9px;color:var(--text-dim)">Notes: ${t.notes}</div>`:''}
+    </div>
+  `).join('');
+}
+
+// MANAGE MODALS
+function openManageProviders(){
+  openModal(`
+    <div style="font-size:14px;font-weight:700;color:var(--text);font-family:var(--font);margin-bottom:16px">📱 I-manage ang E-Load Providers</div>
+    <div id="provider-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px"></div>
+    <div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:8px">➕ Magdagdag ng Provider</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+      <input id="new-prov-name" class="inp inp-sm" placeholder="Network name" style="grid-column:1/-1">
+      <select id="new-prov-fee-type" class="inp inp-sm"><option value="percent">Percentage (%)</option><option value="fixed">Fixed Amount</option></select>
+      <input id="new-prov-fee-val" class="inp inp-sm" type="number" placeholder="Value">
+    </div>
+    <button class="btn btn-primary btn-full btn-sm" onclick="addProvider()">+ I-add ang Provider</button>
+    <div id="provider-list-render"></div>
+  `);
+  renderProviderList();
+}
+
+function renderProviderList(){
+  const el=document.getElementById('provider-list');
+  if(!el)return;
+  el.innerHTML=eloadProviders.map(p=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;background:var(--surface);border-radius:10px;padding:10px 12px">
+      <div>
+        <div style="font-size:12px;font-weight:700;color:var(--text)">${p.name}</div>
+        <div style="font-size:9px;color:var(--text-dim)">${p.feeType==='percent'?p.feeValue+'% komisyon':sym()+p.feeValue+' fixed'}</div>
+      </div>
+      <button onclick="deleteProvider(${p.id})" class="btn btn-danger btn-sm">🗑️</button>
+    </div>
+  `).join('');
+}
+
+function addProvider(){
+  const name=document.getElementById('new-prov-name')?.value;
+  const feeType=document.getElementById('new-prov-fee-type')?.value||'percent';
+  const feeValue=+document.getElementById('new-prov-fee-val')?.value||0;
+  if(!name)return;
+  eloadProviders.push({id:genId(),name,color:'#8899aa',feeType,feeValue});
+  save('__eload_providers',eloadProviders);
+  renderProviderList();renderEloadSection();
+  document.getElementById('new-prov-name').value='';document.getElementById('new-prov-fee-val').value='';
+  toast('Naidagdag!','var(--accent)');
+}
+
+function deleteProvider(id){
+  eloadProviders=eloadProviders.filter(p=>p.id!==id);
+  save('__eload_providers',eloadProviders);
+  if(selectedEloadProvider?.id===id)selectedEloadProvider=eloadProviders[0]||null;
+  renderProviderList();renderEloadSection();
+}
+
+function openManageBills(){
+  openModal(`
+    <div style="font-size:14px;font-weight:700;color:var(--text);font-family:var(--font);margin-bottom:16px">💳 I-manage ang Bills Providers</div>
+    <div id="bills-prov-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px"></div>
+    <div style="font-size:11px;font-weight:700;color:var(--purple);margin-bottom:8px">➕ Magdagdag</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+      <input id="new-bill-name" class="inp inp-sm" placeholder="Pangalan" style="grid-column:1/-1">
+      <input id="new-bill-icon" class="inp inp-sm" placeholder="Icon (emoji)">
+      <select id="new-bill-fee-type" class="inp inp-sm"><option value="fixed">Fixed Amount</option><option value="percent">Percentage</option></select>
+      <input id="new-bill-fee-val" class="inp inp-sm" type="number" placeholder="Value">
+    </div>
+    <button class="btn btn-full btn-sm" style="background:rgba(168,85,247,.15);color:var(--purple);border:1px solid rgba(168,85,247,.3)" onclick="addBillProvider()">+ I-add</button>
+  `);
+  renderBillsProviderList();
+}
+
+function renderBillsProviderList(){
+  const el=document.getElementById('bills-prov-list');if(!el)return;
+  el.innerHTML=billsProviders.map(b=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;background:var(--surface);border-radius:10px;padding:10px 12px">
+      <div><div style="font-size:12px;font-weight:700;color:var(--text)">${b.icon} ${b.name}</div><div style="font-size:9px;color:var(--text-dim)">${b.feeType==='fixed'?sym()+b.feeValue+' fixed':b.feeValue+'%'}</div></div>
+      <button onclick="deleteBillProvider(${b.id})" class="btn btn-danger btn-sm">🗑️</button>
+    </div>
+  `).join('');
+}
+
+function addBillProvider(){
+  const name=document.getElementById('new-bill-name')?.value;
+  const icon=document.getElementById('new-bill-icon')?.value||'📄';
+  const feeType=document.getElementById('new-bill-fee-type')?.value||'fixed';
+  const feeValue=+document.getElementById('new-bill-fee-val')?.value||0;
+  if(!name)return;
+  billsProviders.push({id:genId(),name,icon,feeType,feeValue});
+  save('__bills_providers',billsProviders);
+  renderBillsProviderList();renderBillsSection();
+  toast('Naidagdag!','var(--purple)');
+}
+
+function deleteBillProvider(id){
+  billsProviders=billsProviders.filter(b=>b.id!==id);save('__bills_providers',billsProviders);
+  renderBillsProviderList();renderBillsSection();
+}
+
+function openManageCash(){
+  openModal(`
+    <div style="font-size:14px;font-weight:700;color:var(--text);font-family:var(--font);margin-bottom:16px">💸 I-manage ang GCash/Maya Service Fees</div>
+    <div class="pill-row" style="margin-bottom:14px" id="manage-wallet-pills">
+      ${cashWallets.map(w=>`<button class="pill" onclick="setManageWallet(${w.id})" style="background:${w.color}22;color:${w.color};border-color:${w.color}44">${w.emoji} ${w.name}</button>`).join('')}
+    </div>
+    <div id="manage-fee-ranges"></div>
+    <div style="margin-top:12px;font-size:11px;font-weight:700;color:var(--accent);margin-bottom:8px">➕ Dagdag na Fee Range</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+      <input id="fr-min" class="inp inp-sm" type="number" placeholder="Min amount">
+      <input id="fr-max" class="inp inp-sm" type="number" placeholder="Max amount">
+      <select id="fr-type" class="inp inp-sm"><option value="fixed">Fixed Amount</option><option value="percent">Percentage</option></select>
+      <input id="fr-val" class="inp inp-sm" type="number" placeholder="Fee value">
+    </div>
+    <button class="btn btn-primary btn-full btn-sm" onclick="addFeeRange()">+ I-add ang Range</button>
+  `);
+  setManageWallet(cashWallets[0]?.id);
+}
+
+let manageWalletId=null;
+function setManageWallet(id){
+  manageWalletId=id;
+  const w=cashWallets.find(x=>x.id===id);if(!w)return;
+  const el=document.getElementById('manage-fee-ranges');if(!el)return;
+  el.innerHTML=`
+    <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:8px">${w.emoji} ${w.name} — Fee Ranges</div>
+    ${w.feeRanges.map((r,i)=>`
+      <div style="display:flex;justify-content:space-between;align-items:center;background:var(--surface);border-radius:8px;padding:8px 12px;margin-bottom:6px;font-size:11px">
+        <span style="color:var(--text-mid)">${sym()}${r.min}–${sym()}${r.max}</span>
+        <span style="color:var(--green);font-weight:700">${r.feeType==='fixed'?sym()+r.feeValue:r.feeValue+'%'}</span>
+        <button onclick="deleteFeeRange(${id},${i})" class="btn btn-danger btn-sm" style="padding:4px 8px;font-size:10px">✕</button>
+      </div>
+    `).join('')}
+    ${!w.feeRanges.length?'<div style="font-size:10px;color:var(--text-dim);text-align:center;padding:8px">Walang fee ranges.</div>':''}
+  `;
+}
+
+function addFeeRange(){
+  const w=cashWallets.find(x=>x.id===manageWalletId);if(!w)return;
+  const min=+document.getElementById('fr-min').value;
+  const max=+document.getElementById('fr-max').value;
+  const feeType=document.getElementById('fr-type').value;
+  const feeValue=+document.getElementById('fr-val').value;
+  if(!max)return;
+  w.feeRanges.push({min,max,feeType,feeValue});
+  save('__cash_wallets',cashWallets);
+  setManageWallet(manageWalletId);
+  toast('Naidagdag ang fee range!','var(--accent)');
+}
+
+function deleteFeeRange(walletId,rangeIdx){
+  const w=cashWallets.find(x=>x.id===walletId);
+  if(w){w.feeRanges.splice(rangeIdx,1);save('__cash_wallets',cashWallets);}
+  setManageWallet(walletId);
+}
+
+// ── MODAL ─────────────────────────────────
+function openModal(html){
+  document.getElementById('modal-content').innerHTML=html;
+  document.getElementById('modal-overlay').style.display='flex';
+}
+function closeModal(e){
+  if(!e||e.target.id==='modal-overlay'||e==='force')
+    document.getElementById('modal-overlay').style.display='none';
+}
+
+// ── AI (GROQ) ─────────────────────────────
+function checkGroqKey(){
+  const hasKey=!!(settings.groqKey);
+  const warn=document.getElementById('no-groq-key-warning');
+  const dot=document.getElementById('ai-status-dot');
+  if(warn)warn.style.display=hasKey?'none':'block';
+  if(dot)dot.style.background=hasKey?'var(--green)':'var(--red)';
+}
+
+function renderAIQuickQs(){
+  const qs=['Kumikita ba ako?','Sino may pinakamalaking utang?','Ano ang i-reorder ko?','Paano mapataas ang kita?','Bigyan ng promo ideas'];
+  document.getElementById('ai-quick-qs').innerHTML=qs.map(q=>`
+    <button class="pill" onclick="document.getElementById('ai-input').value='${q}'">${q}</button>
+  `).join('');
+}
+
+function renderAIMessages(){
+  const el=document.getElementById('chat-messages');if(!el)return;
+  el.innerHTML=aiMessages.map(m=>`
+    <div class="${m.role==='user'?'msg-user':'msg-ai'}">
+      ${m.role==='assistant'?'<div style="font-size:18px;flex-shrink:0">🤖</div>':''}
+      <div class="${m.role==='user'?'msg-bubble-user':'msg-bubble-ai'}">${m.content}</div>
+    </div>
+  `).join('');
+  el.scrollTop=el.scrollHeight;
+}
+
+async function sendAI(){
+  const input=document.getElementById('ai-input');
+  const msg=input.value.trim();if(!msg)return;
+  if(!settings.groqKey){toast('Walang Groq API key! Pumunta sa Settings → AI','var(--red)');return;}
+  input.value='';
+  aiMessages.push({role:'user',content:msg});
+  renderAIMessages();
+  document.getElementById('ai-send-btn').textContent='⏳';
+  document.getElementById('ai-send-btn').disabled=true;
+
+  const personality=settings.aiPersonality==='seryoso'?'Seryoso at propesyonal na business advisor':'Makulit, masaya, may sense of humor pero very helpful';
+
+  // ── BUILD FULL DATA CONTEXT ──────────────────────────────
+  const today=sales[sales.length-1]||{sales:0,profit:0,txn:0};
+  const weekTotalSales=sales.reduce((s,d)=>s+d.sales,0);
+  const weekTotalProfit=sales.reduce((s,d)=>s+d.profit,0);
+  const weekMargin=weekTotalSales>0?Math.round((weekTotalProfit/weekTotalSales)*100):0;
+
+  // UTANG — full list sorted by balance descending
+  const utangDetailed=[...utang]
+    .map(u=>({
+      name:u.name,
+      phone:u.phone||'',
+      balance:getBalance(u),
+      limit:u.limit,
+      paid:u.paid,
+      totalDebt:u.items.reduce((a,b)=>a+b.amount,0),
+      txnCount:u.items.length,
+      lastItem:u.items[u.items.length-1]||null,
+    }))
+    .sort((a,b)=>b.balance-a.balance);
+
+  const utangWithDebt=utangDetailed.filter(u=>u.balance>0);
+  const utangPaid=utangDetailed.filter(u=>u.balance<=0);
+  const totalUtangAmt=utangWithDebt.reduce((s,u)=>s+u.balance,0);
+
+  const utangLines=utangDetailed.map((u,i)=>{
+    const phoneStr=u.phone?' | Phone: '+u.phone:'';
+    const lastStr=u.lastItem?' | Huling binili: '+u.lastItem.desc+' ('+sym()+u.lastItem.amount+')':'';
+    return '  '+(i+1)+'. '+u.name+' — Balance: '+sym()+u.balance+' | Limit: '+sym()+u.limit+' | Bayad na: '+sym()+u.paid+' | Txn: '+u.txnCount+phoneStr+lastStr;
+  }).join('\n');
+
+  // PRODUCTS — full list sorted by sold descending
+  const productsSorted=[...products].sort((a,b)=>b.sold-a.sold);
+  const lowStockProds=products.filter(isLow);
+  const expiringProds=products.filter(isExp);
+
+  const productLines=productsSorted.map((p,i)=>
+    `  ${i+1}. ${p.name} (${p.cat}) — Stock: ${p.stock}/${p.min} min | Presyo: ${sym()}${p.price} | Gastos: ${sym()}${p.cost} | Margin: ${getMargin(p)}% | Nabenta: ${p.sold} pcs | Expiry: ${p.expiry}${isLow(p)?' ⚠️ LOW STOCK':''}${isExp(p)?' ⚠️ EXPIRING SOON':''}`
+  ).join('\n');
+
+  // SALES — full daily breakdown
+  const salesLines=sales.map(d=>
+    `  ${d.date}: Sales=${sym()}${d.sales} | Kita=${sym()}${d.profit} | Txn=${d.txn} | Margin=${d.sales>0?Math.round((d.profit/d.sales)*100):0}%`
+  ).join('\n');
+
+  // SERVICES summary
+  const loadCommToday=eloadTxns.reduce((s,t)=>s+t.commission,0);
+  const billsCommToday=[...billsTxns,...cashTxns].reduce((s,t)=>s+(t.commission||t.fee||0),0);
+
+  const systemPrompt=`Ikaw ay TindaBot — matalinong AI assistant para sa sari-sari store sa Pilipinas.
+Sumasagot ka sa Tagalog at Taglish. Personality: ${personality}.
+Tawagan ang may-ari bilang "${settings.ownerName||'Boss'}" o "Boss".
+Gamitin ang LAHAT ng data sa ibaba para sagutin ang tanong nang tama at detalyado.
+Kung may hinahanap (hal. sino ang may pinakamataas na utang), i-refer sa exact na pangalan at halaga.
+
+════════════════════════════════════════
+TINDAHAN: ${settings.storeName} | May-ari: ${settings.ownerName}
+════════════════════════════════════════
+
+📊 SALES SUMMARY:
+• Ngayon (${today.date}): Sales=${sym()}${today.sales} | Kita=${sym()}${today.profit} | Txn=${today.txn}
+• Lingguhang Sales: ${sym()}${weekTotalSales} | Kita: ${sym()}${weekTotalProfit} | Margin: ${weekMargin}%
+• Best day: ${sales.reduce((a,b)=>b.sales>a.sales?b:a,{date:'N/A',sales:0}).date} (${sym()}${sales.reduce((a,b)=>b.sales>a.sales?b:a,{date:'N/A',sales:0}).sales})
+
+📅 DAILY SALES (bawat araw):
+${salesLines}
+
+📋 UTANG (${utangWithDebt.length} may utang, ${utangPaid.length} bayad na):
+• KABUUANG UTANG: ${sym()}${totalUtangAmt}
+• PINAKAMATAAS NA UTANG: ${utangWithDebt[0]?.name||'Wala'} — ${sym()}${utangWithDebt[0]?.balance||0}
+• PANGALAWA: ${utangWithDebt[1]?.name||'Wala'} — ${sym()}${utangWithDebt[1]?.balance||0}
+• IKATLO: ${utangWithDebt[2]?.name||'Wala'} — ${sym()}${utangWithDebt[2]?.balance||0}
+
+KUMPLETONG LISTAHAN NG UTANG (sorted: pinakamataas → pinakamababa):
+${utangLines||'  Walang utang.'}
+
+📦 INVENTORY (${products.length} produkto, ${lowStockProds.length} low stock, ${expiringProds.length} expiring):
+• LOW STOCK: ${lowStockProds.map(p=>p.name+' ('+p.stock+' left)').join(', ')||'Wala'}
+• EXPIRING SOON: ${expiringProds.map(p=>p.name+' ('+p.expiry+')').join(', ')||'Wala'}
+• TOP SELLER: ${productsSorted[0]?.name||'N/A'} (${productsSorted[0]?.sold||0} pcs)
+• PINAKA-PROFITABLE (margin): ${[...products].sort((a,b)=>getMargin(b)-getMargin(a))[0]?.name||'N/A'} (${getMargin([...products].sort((a,b)=>getMargin(b)-getMargin(a))[0]||{})}%)
+
+KUMPLETONG PRODUCT LIST (sorted: pinaka-maraming nabenta):
+${productLines||'  Walang produkto.'}
+
+⚡ SERVICES:
+• E-Load komisyon (total): ${sym()}${loadCommToday.toFixed(2)} (${eloadTxns.length} txn)
+• Bills/Cash komisyon (total): ${sym()}${billsCommToday.toFixed(2)} (${billsTxns.length+cashTxns.length} txn)
+
+════════════════════════════════════════
+INSTRUCTIONS:
+- Laging i-reference ang exact na pangalan, halaga, at datos mula sa data sa itaas.
+- Kung may computation, ipakita ang math.
+- Gumamit ng emojis para mas masaya.
+- Kung hindi mahanap ang data, sabihin na "hindi ko nakikita sa data".
+- HINDI ka mag-iimbento ng datos na wala sa itaas.
+════════════════════════════════════════`;
+
+  try{
+    const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+settings.groqKey},
+      body:JSON.stringify({
+        model:settings.groqModel||'llama-3.3-70b-versatile',
+        max_tokens:800,
+        messages:[{role:'system',content:systemPrompt},...aiMessages.slice(-10)]
+      })
+    });
+    if(!res.ok){const err=await res.json();throw new Error(err.error?.message||'API Error '+res.status);}
+    const data=await res.json();
+    const reply=data.choices?.[0]?.message?.content||'Walang sagot.';
+    aiMessages.push({role:'assistant',content:reply});
+    save('__ai_messages',aiMessages.slice(-40));
+    renderAIMessages();
+  } catch(e){
+    aiMessages.push({role:'assistant',content:`❌ Error: ${e.message}\n\nI-check ang Groq API key sa Settings.`});
+    renderAIMessages();
+  }
+  document.getElementById('ai-send-btn').textContent='📤';
+  document.getElementById('ai-send-btn').disabled=false;
+}
+
+function clearAIChat(){
+  aiMessages=[{role:'assistant',content:'Chat cleared! Magsimula ulit tayo. 😊 Anong tanong mo, Boss?'}];
+  save('__ai_messages',aiMessages);renderAIMessages();
+}
+
+// ── SETTINGS ──────────────────────────────
+function initSettingsNav(){
+  const secs=[['store','🏪 Tindahan'],['display','🎨 Display'],['ai','🤖 AI'],['security','🔐 Security'],['data','💾 Data'],['account','👤 Account']];
+  document.getElementById('settings-nav').innerHTML=secs.map(([id,label])=>`
+    <button class="pill ${activeSettingsSection===id?'active':''}" onclick="switchSettings('${id}')">${label}</button>
+  `).join('');
+}
+
+function switchSettings(sec){
+  activeSettingsSection=sec;
+  ['store','display','ai','security','data','account'].forEach(s=>{
+    const el=document.getElementById('settings-'+s);
+    if(el)el.style.display=s===sec?'flex':'none';
+  });
+  initSettingsNav();
+  if(sec==='store')renderSettingsStore();
+  if(sec==='display')renderThemeGrid();
+  if(sec==='ai')renderSettingsAI();
+  if(sec==='security')renderSettingsSecurity();
+  if(sec==='account')renderAccountInfo();
+}
+
+function renderSettingsStore(){
+  const els={
+    's-store-name':settings.storeName,'s-owner':settings.ownerName,
+    's-address':settings.address,'s-phone':settings.phone,
+    's-utang-limit':settings.defaultUtangLimit
+  };
+  Object.entries(els).forEach(([id,val])=>{const el=document.getElementById(id);if(el)el.value=val||'';});
+}
+
+function saveSetting(key,val){settings[key]=val;saveSettings();}
+function setSetting(key,val){settings[key]=val;saveSettings();}
+
+function renderThemeGrid(){
+  const grid=document.getElementById('theme-grid');if(!grid)return;
+  grid.innerHTML=Object.entries(THEMES).map(([key,T])=>`
+    <div onclick="applyTheme('${key}');renderThemeGrid()" style="background:${T.card};border:2px solid ${settings.theme===key?T.accent:T.border};border-radius:14px;padding:12px;cursor:pointer;position:relative">
+      <div style="display:flex;gap:3px;margin-bottom:8px">
+        ${[T.accent,T.blue,T.green,T.red].map(c=>`<div style="width:12px;height:12px;border-radius:50%;background:${c}"></div>`).join('')}
+      </div>
+      <div style="font-size:11px;font-weight:700;color:${T.text}">${T.name}</div>
+      ${settings.theme===key?`<div style="position:absolute;top:6px;right:8px;color:${T.accent};font-size:12px">✓</div>`:''}
+    </div>
+  `).join('');
+}
+
+function renderSettingsAI(){
+  const el=document.getElementById('s-groq-key');if(el)el.value=settings.groqKey||'';
+  const model=document.getElementById('s-groq-model');if(model)model.value=settings.groqModel||'llama-3.3-70b-versatile';
+  const pers=document.getElementById('s-ai-personality');if(pers)pers.value=settings.aiPersonality||'makulit';
+}
+
+function renderSettingsSecurity(){
+  const pinStatus=document.getElementById('pin-status-text');if(pinStatus)pinStatus.textContent=settings.pinEnabled?'Aktibo — may PIN na set':'Hindi aktibo';
+  const pinToggle=document.getElementById('pin-toggle');
+  const pinThumb=document.getElementById('pin-thumb');
+  if(pinToggle)pinToggle.style.background=settings.pinEnabled?'var(--accent)':'var(--border)';
+  if(pinThumb)pinThumb.style.left=settings.pinEnabled?'22px':'2px';
+  const deviceEl=document.getElementById('device-id-setting');if(deviceEl)deviceEl.textContent=getDeviceId();
+}
+
+function togglePIN(){
+  if(settings.pinEnabled){settings.pinEnabled=false;settings.pin='';LS.del('__app_pin');saveSettings();renderSettingsSecurity();toast('PIN removed','var(--text-mid)')}
+  else{document.getElementById('pin-form').style.display='block';renderSettingsSecurity();}
+}
+
+function savePIN(){
+  const pin=document.getElementById('new-pin-input').value;
+  if(pin.length<4){toast('4 digits minimum!','var(--red)');return;}
+  settings.pin=pin;settings.pinEnabled=true;saveSettings();LS.set('__app_pin',pin);
+  document.getElementById('pin-form').style.display='none';renderSettingsSecurity();
+  toast('Na-set ang PIN!','var(--green)');
+}
+
+function renderAccountInfo(){
+  document.getElementById('account-info').innerHTML=[
+    ['Plan',session?.plan||''],['License Key',session?.key||''],['Device ID',getDeviceId()],
+    ['Logged In',new Date(session?.loginTime||Date.now()).toLocaleDateString()],
+  ].map(([k,v])=>`
+    <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);font-size:12px">
+      <span style="color:var(--text-mid)">${k}</span>
+      <span style="color:var(--text);font-weight:600;font-family:${k.includes('Key')||k.includes('Device')?'monospace':'inherit'};font-size:${k.includes('Device')?'9px':'12px'};word-break:break-all;text-align:right;max-width:60%">${v}</span>
+    </div>
+  `).join('');
+}
+
+function exportData(){
+  const data={products,utang,sales,settings,eloadProviders,billsProviders,cashWallets,eloadTxns,billsTxns,cashTxns,exported:new Date().toISOString()};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=`tindahanko-backup-${Date.now()}.json`;a.click();
+  toast('Na-export ang data!','var(--green)');
+}
+
+function clearAllData(){
+  if(!confirm('Sure ka ba? Mabubura ang lahat ng data!'))return;
+  ['__products','__utang','__sales','__eload_txns','__bills_txns','__cash_txns','__ai_messages'].forEach(k=>LS.del(k));
+  products=DEFAULT_PRODUCTS;utang=DEFAULT_UTANG;sales=DEFAULT_SALES;
+  eloadTxns=[];billsTxns=[];cashTxns=[];
+  saveProducts();saveUtang();saveSales();
+  toast('Na-clear! Reload ang page.','var(--red)');
+}
+
+function logout(){
+  if(!confirm('Mag-logout ka ba?'))return;
+  LS.del('__session');location.reload();
+}
+
+// ── INIT ──────────────────────────────────
+checkExistingSession();
+</script>
+</body>
+</html>
